@@ -86,8 +86,6 @@ var (
 	DefaultApplication *application
 	DefaultReminder    ReminderService
 	DefaultAttachment  AttachmentService
-	DefaultWorkflow    *workflow
-	DefaultTrigger     *trigger
 
 	DefaultStatistics *statistics
 
@@ -178,7 +176,6 @@ func Initialize(ctx context.Context, log *zap.Logger, s store.Storer, c Config) 
 	DefaultSink = Sink()
 	DefaultStatistics = Statistics()
 	DefaultAttachment = Attachment(DefaultObjectStore)
-	DefaultWorkflow = Workflow(DefaultLogger, DefaultStore, DefaultActionlog, eventbus.Service())
 
 	return
 }
