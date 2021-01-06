@@ -119,9 +119,9 @@ const (
 	SessionActive int = iota
 	SessionSuspended
 	SessionStepSuspended
-	SessionCompleted
-	SessionFailed
 	SessionNewMessage
+	SessionFailed
+	SessionCompleted
 )
 
 var (
@@ -132,7 +132,7 @@ var (
 
 	// wrapper around time.Now() that will aid service testing
 	now = func() *time.Time {
-		c := time.Now().Round(time.Second)
+		c := time.Now()
 		return &c
 	}
 )
@@ -167,20 +167,23 @@ func NewSession(ctx context.Context, wf *Graph, oo ...sessionOpt) *Session {
 }
 
 func (s Session) Status() int {
-	switch {
-	case s.err != nil:
-		return SessionFailed
+	defer s.mux.Unlock()
+	s.mux.Lock()
 
-	case len(s.execLock) > 0 || len(s.qState) > 0 || len(s.qErr) > 0:
+	if s.err != nil {
+		return SessionFailed
+	}
+
+	if len(s.suspended) > 0 {
+		return SessionSuspended
+	}
+
+	if s.result == nil {
 		// active
 		return SessionActive
-
-	case len(s.suspended) > 0:
-		return SessionSuspended
-
-	default:
-		return SessionCompleted
 	}
+
+	return SessionCompleted
 }
 
 func (s Session) ID() uint64 { return s.id }
@@ -254,7 +257,7 @@ func (s *Session) enqueue(ctx context.Context, st *State) error {
 		return ctx.Err()
 
 	case s.qState <- st:
-		s.log.Debugf("Session(%d).Run() => added step to qState\n", s.id)
+		s.log.Debugf("Session(%d).Run() => added step to qState", s.id)
 		return nil
 	}
 }
@@ -271,19 +274,19 @@ func (s *Session) Wait(ctx context.Context) {
 		select {
 		case <-waitCheck.C:
 			if s.Idle() {
-				s.log.Debugf("Session(%d).Wait() => idle\n", s.id)
+				s.log.Debugf("Session(%d).Wait() => idle (status = %d)", s.id, s.Status())
 				// nothing in the pipeline
 				return
 			}
 
 		case <-ctx.Done():
-			s.log.Debugf("Session(%d).Wait() => ctx.Done() (err: %s)\n", s.id, ctx.Err())
+			s.log.Debugf("Session(%d).Wait() => ctx.Done() (err: %s)", s.id, ctx.Err())
 			return
 
 		case err := <-s.qErr:
 			if err == nil {
 				// execution complete
-				s.log.Debugf("Session(%d).Wait() => done\n", s.id)
+				s.log.Debugf("Session(%d).Wait() => done", s.id)
 				return
 			}
 
@@ -293,7 +296,7 @@ func (s *Session) Wait(ctx context.Context) {
 				s.err = err
 			}
 
-			s.log.Debugf("Session(%d).Wait() => got error (by execution) (err: %s)\n", s.id, s.err)
+			s.log.Debugf("Session(%d).Wait() => got error (by execution) (err: %s)", s.id, s.err)
 		}
 	}
 }
@@ -307,27 +310,28 @@ func (s *Session) worker(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			s.log.Debugf("Session(%d).worker() => ctx.Done(): %v\n", s.id, ctx.Err())
+			s.log.Debugf("Session(%d).worker() => ctx.Done(): %v", s.id, ctx.Err())
 			return
 
 		case <-suspCheck.C:
-			s.log.Debugf("Session(%d).worker() => checking for scheduled suspended\n", s.id)
+			s.log.Debugf("Session(%d).worker() => checking for scheduled suspended", s.id)
 			s.queueScheduledSuspended()
 
 		case st := <-s.qState:
 			if st.step == nil {
-				s.log.Debugf("Session(%d).worker() => got step==nil state; stopping & setting result!\n", s.id)
+				s.log.Debugf("Session(%d).worker() => got step==nil state; stopping & setting result!", s.id)
 				defer s.mux.Unlock()
 				s.mux.Lock()
 
-				s.result = st.scope
+				// making sure result != nil
+				s.result = Variables{}.Merge(st.scope)
 				return
 			}
 
 			// add empty struct to chan to lock and to have control over numver of concurrent go processes
 			// this will block if number of items in execLock chan reached value of sessionConcurrentExec
 			s.execLock <- struct{}{}
-			s.log.Debugf("Session(%d).worker() => got state [stateId:%d]; execute!\n", s.id, st.stateId)
+			s.log.Debugf("Session(%d).worker() => got state [stateId:%d]; executing step", s.id, st.stateId)
 			go func() {
 				s.exec(ctx, st)
 				st.completed = now()
@@ -335,8 +339,10 @@ func (s *Session) worker(ctx context.Context) {
 				// remove single
 				<-s.execLock
 
+				status := s.Status()
+				s.log.Debugf("Session(%d).worker() => executed state [stateId:%d]; status: %d", s.id, st.stateId, status)
 				// after exec lock is released call event handler with (new) session status
-				s.eventHandler(s.Status(), st, s)
+				s.eventHandler(status, st, s)
 			}()
 
 		}
@@ -344,7 +350,7 @@ func (s *Session) worker(ctx context.Context) {
 }
 
 func (s *Session) Close() {
-	s.log.Debugf("Session(%d).Close()\n", s.id)
+	s.log.Debugf("Session(%d).Close()", s.id)
 	close(s.qErr)
 	close(s.qState)
 	close(s.execLock)
@@ -380,11 +386,12 @@ func (s *Session) queueScheduledSuspended() {
 			continue
 		}
 
+		s.log.Debugf("Session(%d).queueScheduledSuspended() => %s, %s, %v", s.id, sus.resumeAt.Format("15:04:05.000000000"), now().Format("15:04:05.000000000"), sus.resumeAt.Sub(*now()))
 		if sus.resumeAt.After(*now()) {
 			continue
 		}
 
-		s.log.Debugf("Session(%d).queueScheduledSuspended() => found suspended state [stateId=%d]\n", s.id, id)
+		s.log.Debugf("Session(%d).queueScheduledSuspended() => found suspended state [stateId=%d]", s.id, id)
 		delete(s.suspended, id)
 		s.qState <- sus.state
 	}
@@ -411,13 +418,13 @@ func (s *Session) exec(ctx context.Context, st *State) {
 		case Variables:
 			// most common (successful) result
 			// session will continue with configured child steps
-			s.log.Debugf("Session(%d).exec(%d) => variables: %v\n", s.id, st.stateId, result)
+			s.log.Debugf("Session(%d).exec(%d) => variables: %v", s.id, st.stateId, result)
 			scope = scope.Merge(result)
 
 		case *partial:
 			// *partial is returned when step needs to be executed again
 			// it's used mainly for join gateway step that should be called multiple times (one for each parent path)
-			s.log.Debugf("Session(%d).exec(%d) => partial\n", s.id, st.stateId)
+			s.log.Debugf("Session(%d).exec(%d) => partial", s.id, st.stateId)
 			return
 
 		case *suspended:
@@ -426,11 +433,11 @@ func (s *Session) exec(ctx context.Context, st *State) {
 
 			if result == nil {
 				// @todo why do we allow this again?
-				s.log.Warnf("Session(%d).exec(%d) => suspended with nil\n", s.id, st.stateId)
+				s.log.Warnf("Session(%d).exec(%d) => suspended with nil", s.id, st.stateId)
 				return
 			}
 
-			s.log.Debugf("Session(%d).exec(%d) => suspending step: %v\n", s.id, st.stateId, result)
+			s.log.Debugf("Session(%d).exec(%d) => suspending step: input? %v / resumeAt? %v", s.id, st.stateId, result.input, result.resumeAt)
 			result.state = st
 			s.mux.Lock()
 			s.suspended[st.stateId] = result
@@ -440,7 +447,7 @@ func (s *Session) exec(ctx context.Context, st *State) {
 
 		case *message:
 			// step emitted a message, store it and continue as planned
-			s.log.Debugf("Session(%d).exec(%d) => message received: %v\n", s.id, st.stateId, result)
+			s.log.Debugf("Session(%d).exec(%d) => message received: %v", s.id, st.stateId, result)
 			s.mux.Lock()
 			s.messages = append(s.messages, result)
 			s.mux.Unlock()
@@ -449,17 +456,17 @@ func (s *Session) exec(ctx context.Context, st *State) {
 		case Steps:
 			// session continues with set of specified steps
 			// steps MUST be configured in a graph as step's children
-			s.log.Debugf("Session(%d).exec(%d) => multiple steps: %v\n", s.id, st.stateId, result)
+			s.log.Debugf("Session(%d).exec(%d) => multiple steps: %v", s.id, st.stateId, result)
 			next = result
 
 		case Step:
 			// session continues with a specified step
 			// step MUST be configured in a graph as step's child
-			s.log.Debugf("Session(%d).exec(%d) => single step: %v\n", s.id, st.stateId, result)
+			s.log.Debugf("Session(%d).exec(%d) => single step: %v", s.id, st.stateId, result)
 			next = Steps{result}
 
 		default:
-			s.log.Debugf("Session(%d).exec(%d) => unknown exec response type: %T\n", s.id, st.stateId, result)
+			s.log.Debugf("Session(%d).exec(%d) => unknown exec response type: %T", s.id, st.stateId, result)
 			return
 		}
 	}
@@ -475,16 +482,18 @@ func (s *Session) exec(ctx context.Context, st *State) {
 	}
 
 	if len(next) == 0 {
-		s.log.Debugf("Session(%d).exec(%d) => zero paths, completing\n", s.id, st.stateId)
+		s.log.Debugf("Session(%d).exec(%d) => zero paths, completing", s.id, st.stateId)
 		// using state to transport results and complete the worker loop
 		s.qState <- FinalState(s, scope)
 		return
 	}
 
-	s.log.Debugf("Session(%d).exec(%d) => %d paths\n", s.id, st.stateId, len(next))
+	s.log.Debugf("Session(%d).exec(%d) => %d paths", s.id, st.stateId, len(next))
 	for _, p := range next {
-		s.log.Debugf("Session(%d).exec(%d) => queuing step\n", s.id, st.stateId)
-		_ = s.enqueue(ctx, NewState(s, st.step, p, scope))
+		s.log.Debugf("Session(%d).exec(%d) => queuing step", s.id, st.stateId)
+		if err := s.enqueue(ctx, NewState(s, st.step, p, scope)); err != nil {
+			s.log.Errorf("Session(%d).exec(%d) => step queue err: %v", s.id, err)
+		}
 	}
 
 }
@@ -503,9 +512,9 @@ func SetHandler(fn StateChangeHandler) sessionOpt {
 
 func NewState(ses *Session, caller, current Step, scope Variables) *State {
 	return &State{
+		stateId:   nextID(),
+		sessionId: ses.id,
 		created:   *now(),
-		stateId:   ses.id,
-		sessionId: nextID(),
 		caller:    caller,
 		step:      current,
 		scope:     scope,
@@ -514,10 +523,10 @@ func NewState(ses *Session, caller, current Step, scope Variables) *State {
 
 func FinalState(ses *Session, scope Variables) *State {
 	return &State{
+		stateId:   nextID(),
+		sessionId: ses.id,
 		created:   *now(),
 		completed: now(),
-		stateId:   ses.id,
-		sessionId: nextID(),
 		scope:     scope,
 	}
 }
