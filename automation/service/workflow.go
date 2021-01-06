@@ -68,6 +68,7 @@ const (
 	workflowUnchanged     workflowChanges = 0
 	workflowChanged       workflowChanges = 1
 	workflowLabelsChanged workflowChanges = 2
+	workflowDefChanged    workflowChanges = 4
 )
 
 func Workflow(log *zap.Logger) *workflow {
@@ -323,6 +324,9 @@ func (svc workflow) updater(ctx context.Context, workflowID uint64, action func(
 				return err
 			}
 
+		}
+
+		if changes&workflowDefChanged > 0 {
 			if err = svc.triggers.registerWorkflows(ctx, res); err != nil {
 				return err
 			}
@@ -368,7 +372,7 @@ func (svc workflow) handleUpdate(upd *types.Workflow) workflowUpdateHandler {
 		}
 
 		if res.Enabled != upd.Enabled {
-			changes |= workflowChanged
+			changes |= workflowChanged & workflowDefChanged
 			res.Enabled = upd.Enabled
 		}
 
@@ -380,12 +384,12 @@ func (svc workflow) handleUpdate(upd *types.Workflow) workflowUpdateHandler {
 		}
 
 		if res.Trace != upd.Trace {
-			changes |= workflowChanged
+			changes |= workflowChanged & workflowDefChanged
 			res.Trace = upd.Trace
 		}
 
 		if res.KeepSessions != upd.KeepSessions {
-			changes |= workflowChanged
+			changes |= workflowChanged & workflowDefChanged
 			res.KeepSessions = upd.KeepSessions
 		}
 
@@ -398,28 +402,28 @@ func (svc workflow) handleUpdate(upd *types.Workflow) workflowUpdateHandler {
 
 		if upd.Scope != nil {
 			if !reflect.DeepEqual(upd.Scope, res.Scope) {
-				changes |= workflowChanged
+				changes |= workflowChanged & workflowDefChanged
 				res.Scope = upd.Scope
 			}
 		}
 
 		if upd.Steps != nil {
 			if !reflect.DeepEqual(upd.Steps, res.Steps) {
-				changes |= workflowChanged
+				changes |= workflowChanged & workflowDefChanged
 				res.Steps = upd.Steps
 			}
 		}
 
 		if upd.Paths != nil {
 			if !reflect.DeepEqual(upd.Paths, res.Paths) {
-				changes |= workflowChanged
+				changes |= workflowChanged & workflowDefChanged
 				res.Paths = upd.Paths
 			}
 		}
 
 		if res.RunAs != upd.RunAs {
 			// @todo need to check against access control if current user can modify security descriptor
-			changes |= workflowChanged
+			changes |= workflowChanged & workflowDefChanged
 			res.RunAs = upd.RunAs
 		}
 
