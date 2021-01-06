@@ -26,12 +26,6 @@ var (
 	testID = atomic.NewUint64(0)
 )
 
-func init() {
-	nextID = func() uint64 {
-		return testID.Inc()
-	}
-}
-
 func (s *sesTestStep) Exec(ctx context.Context, r *ExecRequest) (ExecResponse, error) {
 	if s.exec != nil {
 		return s.exec(ctx, r)
@@ -46,10 +40,10 @@ func (s *sesTestStep) Exec(ctx context.Context, r *ExecRequest) (ExecResponse, e
 
 func (s *sesTestTemporal) Exec(ctx context.Context, r *ExecRequest) (ExecResponse, error) {
 	if s.until.IsZero() {
-		s.until = time.Now().Add(s.delay)
+		s.until = now().Add(s.delay)
 	}
 
-	if s.until.After(time.Now()) {
+	if now().Before(s.until) {
 		return DelayExecution(s.until), nil
 	}
 
@@ -112,7 +106,8 @@ func TestSession_Delays(t *testing.T) {
 	var (
 		// how fast we want to go (lower = faster)
 		//
-		unit = 500 * time.Microsecond
+		unit  = time.Millisecond
+		delay = unit * 3
 
 		ctx = context.Background()
 		req = require.New(t)
@@ -123,6 +118,8 @@ func TestSession_Delays(t *testing.T) {
 		)
 
 		start = &sesTestStep{name: "start"}
+
+		waitForMoment = &sesTestTemporal{delay: delay}
 
 		waitForInputStateId atomic.Uint64
 		waitForInput        = &sesTestStep{name: "waitForInput", exec: func(ctx context.Context, r *ExecRequest) (ExecResponse, error) {
@@ -136,8 +133,12 @@ func TestSession_Delays(t *testing.T) {
 				"waitForInput": "executed",
 			}, nil
 		}}
-		waitForMoment = &sesTestTemporal{delay: 3 * unit}
 	)
+
+	//ses.log = logger.MakeDebugLogger().Sugar()
+
+	ctx, cancelFn := context.WithTimeout(ctx, time.Second*5)
+	defer cancelFn()
 
 	wf.AddStep(start, waitForMoment)
 	wf.AddStep(waitForMoment, waitForInput)
@@ -145,7 +146,8 @@ func TestSession_Delays(t *testing.T) {
 	req.NoError(ses.Exec(ctx, start, nil))
 
 	// wait-for-moment step needs to be executed before we can resume wait-for-input
-	time.Sleep(10 * unit)
+	ses.Wait(ctx)
+	time.Sleep(delay + unit)
 	req.NotZero(waitForInputStateId.Load())
 
 	// should not be completed yet...
@@ -157,7 +159,7 @@ func TestSession_Delays(t *testing.T) {
 
 	req.False(ses.Suspended())
 	ses.Wait(ctx)
-	time.Sleep(10 * unit)
+	time.Sleep(2 * unit)
 
 	// should not be completed yet...
 	req.True(ses.Idle())
