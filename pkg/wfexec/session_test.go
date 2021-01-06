@@ -126,13 +126,13 @@ func TestSession_Delays(t *testing.T) {
 
 		waitForInputStateId atomic.Uint64
 		waitForInput        = &sesTestStep{name: "waitForInput", exec: func(ctx context.Context, r *ExecRequest) (ExecResponse, error) {
-			if !r.Scope.Has("input") {
+			if !r.Input.Has("input") {
 				waitForInputStateId.Store(r.StateID)
 				return WaitForInput(), nil
 			}
 
 			return Variables{
-				"input":        r.Scope["input"],
+				"input":        r.Input["input"],
 				"waitForInput": "executed",
 			}, nil
 		}}
