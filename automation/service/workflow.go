@@ -372,7 +372,7 @@ func (svc workflow) handleUpdate(upd *types.Workflow) workflowUpdateHandler {
 		}
 
 		if res.Enabled != upd.Enabled {
-			changes |= workflowChanged & workflowDefChanged
+			changes |= workflowChanged | workflowDefChanged
 			res.Enabled = upd.Enabled
 		}
 
@@ -384,12 +384,12 @@ func (svc workflow) handleUpdate(upd *types.Workflow) workflowUpdateHandler {
 		}
 
 		if res.Trace != upd.Trace {
-			changes |= workflowChanged & workflowDefChanged
+			changes |= workflowChanged | workflowDefChanged
 			res.Trace = upd.Trace
 		}
 
 		if res.KeepSessions != upd.KeepSessions {
-			changes |= workflowChanged & workflowDefChanged
+			changes |= workflowChanged | workflowDefChanged
 			res.KeepSessions = upd.KeepSessions
 		}
 
@@ -402,28 +402,28 @@ func (svc workflow) handleUpdate(upd *types.Workflow) workflowUpdateHandler {
 
 		if upd.Scope != nil {
 			if !reflect.DeepEqual(upd.Scope, res.Scope) {
-				changes |= workflowChanged & workflowDefChanged
+				changes |= workflowChanged | workflowDefChanged
 				res.Scope = upd.Scope
 			}
 		}
 
 		if upd.Steps != nil {
 			if !reflect.DeepEqual(upd.Steps, res.Steps) {
-				changes |= workflowChanged & workflowDefChanged
+				changes |= workflowChanged | workflowDefChanged
 				res.Steps = upd.Steps
 			}
 		}
 
 		if upd.Paths != nil {
 			if !reflect.DeepEqual(upd.Paths, res.Paths) {
-				changes |= workflowChanged & workflowDefChanged
+				changes |= workflowChanged | workflowDefChanged
 				res.Paths = upd.Paths
 			}
 		}
 
 		if res.RunAs != upd.RunAs {
 			// @todo need to check against access control if current user can modify security descriptor
-			changes |= workflowChanged & workflowDefChanged
+			changes |= workflowChanged | workflowDefChanged
 			res.RunAs = upd.RunAs
 		}
 
