@@ -11,11 +11,13 @@ import (
 
 type (
 	sesTestStep struct {
+		stepIdentifier
 		name string
 		exec func(context.Context, *ExecRequest) (ExecResponse, error)
 	}
 
 	sesTestTemporal struct {
+		stepIdentifier
 		delay time.Duration
 		until time.Time
 	}
@@ -178,7 +180,7 @@ func TestSession_Messages(t *testing.T) {
 		ses = NewSession(ctx, wf)
 
 		bodyExpr, _ = NewExpression(expr.Parser(), "", "message")
-		msg1        = NewMessage("alert", bodyExpr)
+		msg1        = NewMessageEmitter("alert", bodyExpr)
 	)
 
 	//ses.log = logger.MakeDebugLogger().Sugar()

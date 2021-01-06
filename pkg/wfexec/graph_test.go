@@ -7,7 +7,10 @@ import (
 )
 
 type (
-	wfTestStep struct{ name string }
+	wfTestStep struct {
+		stepIdentifier
+		name string
+	}
 )
 
 func (wfTestStep) Exec(context.Context, *ExecRequest) (ExecResponse, error) {

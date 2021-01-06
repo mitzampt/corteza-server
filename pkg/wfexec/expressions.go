@@ -20,6 +20,8 @@ type (
 	}
 
 	Expressions struct {
+		stepIdentifier
+
 		lang gval.Language
 		set  []*Expression
 	}

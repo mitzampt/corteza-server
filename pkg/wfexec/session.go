@@ -75,8 +75,8 @@ type (
 		// Session identifier
 		sessionId uint64
 
-		// caller, parent step
-		caller Step
+		// parent, parent step
+		parent Step
 
 		// current step
 		step Step
@@ -90,6 +90,17 @@ type (
 
 		// scope
 		scope Variables
+	}
+
+	Frame struct {
+		Created   time.Time     `json:"created"`
+		SessionID uint64        `json:"sessionID"`
+		StateID   uint64        `json:"stateID"`
+		Input     Variables     `json:"input"`
+		Scope     Variables     `json:"scope"`
+		ParentID  uint64        `json:"parentID"`
+		StepID    uint64        `json:"stepID"`
+		LeadTime  time.Duration `json:"leadTime"`
 	}
 
 	// ExecRequest is passed to Exec() functions and contains all information to
@@ -106,7 +117,7 @@ type (
 
 		// Helps with gateway join/merge steps
 		// that needs info about the step it's currently merging
-		Caller Step
+		Parent Step
 	}
 )
 
@@ -515,7 +526,7 @@ func NewState(ses *Session, caller, current Step, scope Variables) *State {
 		stateId:   nextID(),
 		sessionId: ses.id,
 		created:   *now(),
-		caller:    caller,
+		parent:    caller,
 		step:      current,
 		scope:     scope,
 	}
@@ -537,8 +548,32 @@ func (s State) MakeRequest() *ExecRequest {
 		StateID:   s.stateId,
 		Scope:     s.scope,
 		Input:     s.input,
-		Caller:    s.caller,
+		Parent:    s.parent,
 	}
+}
+
+func (s State) MakeFrame() *Frame {
+	f := &Frame{
+		Created:   s.created,
+		SessionID: s.sessionId,
+		StateID:   s.stateId,
+		Input:     s.input,
+		Scope:     s.scope,
+	}
+
+	if s.step != nil {
+		f.StepID = s.step.ID()
+	}
+
+	if s.parent != nil {
+		f.ParentID = s.parent.ID()
+	}
+
+	if s.completed != nil {
+		f.LeadTime = s.completed.Sub(s.created)
+	}
+
+	return f
 }
 
 func (s *State) Error() string {

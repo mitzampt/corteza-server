@@ -10,11 +10,9 @@ fields:
   - { field: EventType }
   - { field: ResourceType }
   - { field: Status,     type: int }
-  - { field: WallTime,   type: "time.Duration" }
-  - { field: UserTime,   type: "time.Duration" }
   - { field: Input,      type: "types.Variables" }
   - { field: Output,     type: "types.Variables" }
-  - { field: Trace,      type: "types.SessionTraceStepSet" }
+  - { field: Stacktrace, type: "types.Stacktrace" }
   - { field: CreatedBy }
   - { field: CreatedAt }
   - { field: PurgeAt }

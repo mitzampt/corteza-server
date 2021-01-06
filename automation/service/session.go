@@ -112,7 +112,7 @@ func (svc *session) Start(g *wfexec.Graph, i auth.Identifiable, ssp types.Sessio
 		default:
 			return fmt.Errorf("multiple steps without parents")
 		}
-	} else if start = g.GetStepByIdentifier(ssp.StepID); start == nil {
+	} else if start = g.StepByID(ssp.StepID); start == nil {
 		return fmt.Errorf("trigger staring step references nonexisting step")
 	}
 
@@ -200,21 +200,15 @@ func (svc *session) stateChangeHandler(ctx context.Context) wfexec.StateChangeHa
 			return
 		}
 
-		var err error
+		var (
+			update = true
+			frame  = state.MakeFrame()
+		)
 
-		rq := state.MakeRequest()
-
-		// @todo collect all info and finalize the step
-		ses.Trace = append(ses.Trace, &types.SessionTraceStep{
-			ID:         nextID(),
-			CallerStep: 0,
-			StateID:    rq.StateID,
-			CallerID:   0,
-			StepID:     0,
-			Depth:      0,
-			Scope:      nil,
-			Duration:   0,
-		})
+		if ses.Stacktrace != nil {
+			// Stacktrace will be set to !nil if frame collection is needed
+			ses.Stacktrace = append(ses.Stacktrace, frame)
+		}
 
 		switch i {
 		case wfexec.SessionStepSuspended:
@@ -235,10 +229,15 @@ func (svc *session) stateChangeHandler(ctx context.Context) wfexec.StateChangeHa
 			ses.Status = types.SessionFailed
 
 		default:
+			// force update on every 10 new frames but only when stacktrace is not nil
+			update = ses.Stacktrace != nil && len(ses.Stacktrace)%10 == 0
+		}
+
+		if !update {
 			return
 		}
 
-		if err = svc.store.UpdateAutomationSession(ctx, ses); err != nil {
+		if err := svc.store.UpdateAutomationSession(ctx, ses); err != nil {
 			log.Error("failed to update session", zap.Error(err))
 		} else {
 			log.Debug("session updated", zap.Stringer("status", ses.Status))

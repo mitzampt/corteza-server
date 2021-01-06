@@ -7,6 +7,8 @@ import (
 type (
 	Steps []Step
 	Step  interface {
+		ID() uint64
+		SetID(uint64)
 		Exec(context.Context, *ExecRequest) (ExecResponse, error)
 	}
 
@@ -17,6 +19,8 @@ type (
 		parents  map[Step][]Step
 		index    map[uint64]Step
 	}
+
+	stepIdentifier struct{ id uint64 }
 )
 
 func NewGraph() *Graph {
@@ -30,8 +34,15 @@ func NewGraph() *Graph {
 	return wf
 }
 
+func (i *stepIdentifier) ID() uint64      { return i.id }
+func (i *stepIdentifier) SetID(id uint64) { i.id = id }
+
 func (g *Graph) AddStep(s Step, cc ...Step) {
 	g.steps = append(g.steps, s)
+
+	if id := s.ID(); id != 0 {
+		g.index[id] = s
+	}
 
 	if len(cc) > 0 {
 		g.children[s] = cc
@@ -45,11 +56,7 @@ func (g *Graph) Len() int {
 	return len(g.steps)
 }
 
-func (g *Graph) SetStepIdentifier(s Step, ID uint64) {
-	g.index[ID] = s
-}
-
-func (g *Graph) GetStepByIdentifier(ID uint64) Step {
+func (g *Graph) StepByID(ID uint64) Step {
 	return g.index[ID]
 }
 
