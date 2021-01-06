@@ -21,13 +21,10 @@ type (
 		EventType    string `json:"eventType"`
 		ResourceType string `json:"resourceType"`
 
-		WallTime int `json:"wallTime"` // how long did it take (ms) to run it (inc all suspension)
-		UserTime int `json:"userTime"` // how long did it take (ms) to run it (sum of all time spent in each step)
-
 		Input  Variables `json:"input"`
 		Output Variables `json:"output"`
 
-		Trace SessionTraceStepSet `json:"trace"`
+		Stacktrace Stacktrace `json:"stacktrace"`
 
 		CreatedAt   time.Time  `json:"createdAt,omitempty"`
 		CreatedBy   uint64     `json:"createdBy,string"`
@@ -69,17 +66,7 @@ type (
 		filter.Paging
 	}
 
-	// WorkflowSessionTraceStep stores info and instrumentation on visited workflow steps
-	SessionTraceStep struct {
-		ID         uint64    `json:"traceStepID,string"`
-		CallerStep uint64    `json:"traceCallerStepID,string"`
-		StateID    uint64    `json:"stateID,string"`
-		CallerID   uint64    `json:"callerID,string"`
-		StepID     uint64    `json:"stepID,string"`
-		Depth      uint64    `json:"depth,string"`
-		Scope      Variables `json:"scope"`
-		Duration   int       `json:"duration"` // in ms
-	}
+	Stacktrace []*wfexec.Frame
 
 	SessionStatus int
 )
@@ -116,17 +103,22 @@ func (s *Session) Apply(ssp SessionStartParams) {
 		at := time.Now().Add(time.Duration(ssp.KeepFor) * time.Second)
 		s.PurgeAt = &at
 	}
+
+	if ssp.Trace {
+		// set prop
+		s.Stacktrace = Stacktrace{}
+	}
 }
 
-func (set *SessionTraceStepSet) Scan(value interface{}) error {
+func (set *Stacktrace) Scan(value interface{}) error {
 	//lint:ignore S1034 This typecast is intentional, we need to get []byte out of a []uint8
 	switch value.(type) {
 	case nil:
-		*set = SessionTraceStepSet{}
+		*set = Stacktrace{}
 	case []uint8:
 		b := value.([]byte)
 		if err := json.Unmarshal(b, set); err != nil {
-			return fmt.Errorf("can not scan '%v' into SessionTraceStepSet: %w", string(b), err)
+			return fmt.Errorf("can not scan '%v' into Stacktrace: %w", string(b), err)
 		}
 	}
 
@@ -134,7 +126,7 @@ func (set *SessionTraceStepSet) Scan(value interface{}) error {
 }
 
 // Scan on WorkflowStepSet gracefully handles conversion from NULL
-func (set SessionTraceStepSet) Value() (driver.Value, error) {
+func (set Stacktrace) Value() (driver.Value, error) {
 	return json.Marshal(set)
 }
 

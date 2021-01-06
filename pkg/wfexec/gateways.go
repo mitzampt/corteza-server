@@ -35,6 +35,7 @@ func NewGatewayPath(lang gval.Language, s Step, expr string) (gwp *GatewayPath, 
 // joinGateway handles merging/joining of multiple paths into
 // a single path forward
 type joinGateway struct {
+	stepIdentifier
 	paths  Steps
 	scopes map[Step]Variables
 	l      sync.Mutex
@@ -48,26 +49,26 @@ func JoinGateway(ss ...Step) *joinGateway {
 	}
 }
 
-// Exec fn on join gateway can be called multiple times, even multiple times caller the same caller
+// Exec fn on join gateway can be called multiple times, even multiple times parent the same parent
 //
-// Func will override the collected caller's Variables.
+// Func will override the collected parent's Variables.
 //
 // Join gateways is ready to continue with the Graph when all configured paths are ready to be partial
-// When all paths are merged (ie Exec was called at least once per caller)
+// When all paths are merged (ie Exec was called at least once per parent)
 func (gw *joinGateway) Exec(_ context.Context, r *ExecRequest) (ExecResponse, error) {
 	gw.l.Lock()
 	defer gw.l.Unlock()
 
-	if !gw.paths.Contains(r.Caller) {
-		return nil, fmt.Errorf("unknown caller for join gateway")
+	if !gw.paths.Contains(r.Parent) {
+		return nil, fmt.Errorf("unknown parent for join gateway")
 	}
 
-	gw.scopes[r.Caller] = r.Scope
+	gw.scopes[r.Parent] = r.Scope
 	if len(gw.scopes) < len(gw.paths) {
 		return NewPartial(), nil
 	}
 
-	// All collected, merge scope caller all paths in the defined order
+	// All collected, merge scope parent all paths in the defined order
 	var merged = Variables{}
 	for _, p := range gw.paths {
 		merged = merged.Merge(gw.scopes[p])
@@ -77,7 +78,9 @@ func (gw *joinGateway) Exec(_ context.Context, r *ExecRequest) (ExecResponse, er
 }
 
 // forkGateway handles forking to multiple paths
-type forkGateway struct{}
+type forkGateway struct {
+	stepIdentifier
+}
 
 // ForkGateway fn initializes fork gateway
 // No arguments are required; Graph Graph config is used to
@@ -87,13 +90,14 @@ func ForkGateway() *forkGateway {
 }
 
 // Exec fn on fork gateway always returns empty Steps slice
-// This signals Graph executor to collect child nodes directly caller Graph
+// This signals Graph executor to collect child nodes directly parent Graph
 func (gw forkGateway) Exec(context.Context, *ExecRequest) (ExecResponse, error) {
 	return Steps{}, nil
 }
 
 // inclGateway is an inclusive gateway that can return one or more paths
 type inclGateway struct {
+	stepIdentifier
 	paths []*GatewayPath
 }
 
@@ -135,6 +139,7 @@ func (gw inclGateway) Exec(ctx context.Context, r *ExecRequest) (ExecResponse, e
 
 // exclGateway is an exclusive gateway that can return exactly one path
 type exclGateway struct {
+	stepIdentifier
 	paths []*GatewayPath
 }
 

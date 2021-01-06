@@ -16,8 +16,17 @@ type (
 		msg  *Expression
 	}
 
+	messageEmitter struct {
+		stepIdentifier
+
+		Kind string
+		Body string
+		msg  *Expression
+	}
+
 	prompt struct {
-		ID   uint64
+		stepIdentifier
+
 		Kind string
 
 		// list of input variables that need to be set
@@ -38,17 +47,20 @@ func WaitForInput() *suspended {
 	return &suspended{input: true}
 }
 
-func NewMessage(kind string, msg *Expression) *message {
-	return &message{
-		ID:   nextID(),
+func NewMessageEmitter(kind string, msg *Expression) *messageEmitter {
+	return &messageEmitter{
 		Kind: kind,
 		msg:  msg,
 	}
 }
 
-func (m *message) Exec(ctx context.Context, r *ExecRequest) (ExecResponse, error) {
-	var err error
-	if m.Body, err = m.msg.eval.EvalString(ctx, r.Scope); err != nil {
+func (e *messageEmitter) Exec(ctx context.Context, r *ExecRequest) (ExecResponse, error) {
+	var (
+		m   = &message{}
+		err error
+	)
+
+	if m.Body, err = e.msg.eval.EvalString(ctx, r.Scope); err != nil {
 		return nil, err
 	}
 
@@ -57,7 +69,6 @@ func (m *message) Exec(ctx context.Context, r *ExecRequest) (ExecResponse, error
 
 func NewPrompt(kind string, rr ...string) *prompt {
 	return &prompt{
-		ID:       nextID(),
 		Kind:     kind,
 		Required: rr,
 	}

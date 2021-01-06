@@ -11,6 +11,5 @@ types:
   WorkflowStep: {}
   WorkflowExpression:
     noIdField: true
-  SessionTraceStep: {}
   Session: {}
   State: {}

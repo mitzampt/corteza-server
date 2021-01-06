@@ -6,6 +6,8 @@ import (
 
 type (
 	activity struct {
+		stepIdentifier
+
 		parameters *Expressions
 		results    *Expressions
 		fn         ActivityHandler

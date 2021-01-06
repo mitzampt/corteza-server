@@ -8,7 +8,9 @@ import (
 )
 
 type (
-	gwTestStep struct{}
+	gwTestStep struct {
+		stepIdentifier
+	}
 )
 
 func (*gwTestStep) Exec(context.Context, *ExecRequest) (ExecResponse, error) {
@@ -46,15 +48,15 @@ func TestJoinGateway(t *testing.T) {
 		err error
 	)
 
-	r, err = gw.Exec(nil, &ExecRequest{Caller: p1})
+	r, err = gw.Exec(nil, &ExecRequest{Parent: p1})
 	req.NoError(err)
 	req.Equal(&partial{}, r)
 
-	r, err = gw.Exec(nil, &ExecRequest{Caller: p2})
+	r, err = gw.Exec(nil, &ExecRequest{Parent: p2})
 	req.NoError(err)
 	req.Equal(&partial{}, r)
 
-	r, err = gw.Exec(nil, &ExecRequest{Caller: p3})
+	r, err = gw.Exec(nil, &ExecRequest{Parent: p3})
 	req.NoError(err)
 	req.IsType(Variables{}, r)
 }

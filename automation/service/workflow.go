@@ -491,7 +491,7 @@ func (svc *workflow) toGraph(def *types.Workflow) (*wfexec.Graph, error) {
 	for g.Len() < len(def.Steps) {
 		progress := false
 		for _, step := range def.Steps {
-			if g.GetStepByIdentifier(step.ID) != nil {
+			if g.StepByID(step.ID) != nil {
 				// resolved
 				continue
 			}
@@ -520,17 +520,17 @@ func (svc *workflow) toGraph(def *types.Workflow) (*wfexec.Graph, error) {
 	}
 
 	for _, path := range def.Paths {
-		if g.GetStepByIdentifier(path.ChildID) == nil {
+		if g.StepByID(path.ChildID) == nil {
 			return nil, errors.Internal("failed to resolve paths for %d", path.ChildID)
 		}
 
-		if g.GetStepByIdentifier(path.ParentID) == nil {
+		if g.StepByID(path.ParentID) == nil {
 			return nil, errors.Internal("failed to resolve paths for %d", path.ParentID)
 		}
 
 		g.AddParent(
-			g.GetStepByIdentifier(path.ChildID),
-			g.GetStepByIdentifier(path.ParentID),
+			g.StepByID(path.ChildID),
+			g.StepByID(path.ParentID),
 		)
 	}
 
@@ -566,8 +566,8 @@ func (svc *workflow) workflowStepDefConv(g *wfexec.Graph, s *types.WorkflowStep,
 	if err != nil {
 		return false, err
 	} else if conv != nil {
+		conv.SetID(s.ID)
 		g.AddStep(conv)
-		g.SetStepIdentifier(conv, s.ID)
 		return true, err
 	} else {
 		// unresolved
@@ -585,7 +585,7 @@ func (svc *workflow) workflowGatewayDefConv(g *wfexec.Graph, s *types.WorkflowSt
 			ss []wfexec.Step
 		)
 		for _, p := range in {
-			if parent := g.GetStepByIdentifier(p.ParentID); parent != nil {
+			if parent := g.StepByID(p.ParentID); parent != nil {
 				ss = append(ss, parent)
 			} else {
 				// unresolved parent, come back later.
@@ -601,7 +601,7 @@ func (svc *workflow) workflowGatewayDefConv(g *wfexec.Graph, s *types.WorkflowSt
 		)
 
 		for _, p := range in {
-			child := g.GetStepByIdentifier(p.ChildID)
+			child := g.StepByID(p.ChildID)
 			if child == nil {
 				return nil, nil
 			}
@@ -688,7 +688,7 @@ func (svc *workflow) workflowMessageDefConv(s *types.WorkflowStep) (wfexec.Step,
 		return nil, errors.Internal("message step with undefined message expression")
 	}
 
-	return wfexec.NewMessage(s.Ref, expr), nil
+	return wfexec.NewMessageEmitter(s.Ref, expr), nil
 }
 
 // converts prompt definition to wfexec.Step
