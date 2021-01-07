@@ -13,8 +13,8 @@ import (
 type (
 	Trigger struct {
 		svc interface {
-			Find(ctx context.Context, filter types.TriggerFilter) (types.TriggerSet, types.TriggerFilter, error)
-			FindByID(ctx context.Context, triggerID uint64) (*types.Trigger, error)
+			Search(ctx context.Context, filter types.TriggerFilter) (types.TriggerSet, types.TriggerFilter, error)
+			LookupByID(ctx context.Context, triggerID uint64) (*types.Trigger, error)
 			Create(ctx context.Context, new *types.Trigger) (*types.Trigger, error)
 			Update(ctx context.Context, upd *types.Trigger) (*types.Trigger, error)
 			DeleteByID(ctx context.Context, triggerID uint64) error
@@ -56,7 +56,7 @@ func (ctrl Trigger) List(ctx context.Context, r *request.TriggerList) (interface
 		return nil, err
 	}
 
-	set, filter, err := ctrl.svc.Find(ctx, f)
+	set, filter, err := ctrl.svc.Search(ctx, f)
 	return ctrl.makeFilterPayload(ctx, set, filter, err)
 }
 
@@ -94,7 +94,7 @@ func (ctrl Trigger) Update(ctx context.Context, r *request.TriggerUpdate) (inter
 }
 
 func (ctrl Trigger) Read(ctx context.Context, r *request.TriggerRead) (interface{}, error) {
-	return ctrl.svc.FindByID(ctx, r.TriggerID)
+	return ctrl.svc.LookupByID(ctx, r.TriggerID)
 }
 
 func (ctrl Trigger) Delete(ctx context.Context, r *request.TriggerDelete) (interface{}, error) {

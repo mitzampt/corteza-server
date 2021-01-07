@@ -39,8 +39,8 @@ func (svc accessControl) Effective(ctx context.Context) (ee rbac.EffectiveSet) {
 	ee.Push(types.AutomationRBACResource, "access", svc.CanAccess(ctx))
 	ee.Push(types.AutomationRBACResource, "grant", svc.CanGrant(ctx))
 	ee.Push(types.AutomationRBACResource, "workflow.create", svc.CanCreateWorkflow(ctx))
-	ee.Push(types.AutomationRBACResource, "session.search", svc.CanSearchSessions(ctx))
-	ee.Push(types.AutomationRBACResource, "trigger.search", svc.CanSearchTriggers(ctx))
+	ee.Push(types.AutomationRBACResource, "sessions.search", svc.CanSearchSessions(ctx))
+	ee.Push(types.AutomationRBACResource, "triggers.search", svc.CanSearchTriggers(ctx))
 
 	return
 }
@@ -58,11 +58,11 @@ func (svc accessControl) CanCreateWorkflow(ctx context.Context) bool {
 }
 
 func (svc accessControl) CanSearchTriggers(ctx context.Context) bool {
-	return svc.can(ctx, types.AutomationRBACResource, "trigger.search")
+	return svc.can(ctx, types.AutomationRBACResource, "triggers.search")
 }
 
 func (svc accessControl) CanSearchSessions(ctx context.Context) bool {
-	return svc.can(ctx, types.AutomationRBACResource, "session.search")
+	return svc.can(ctx, types.AutomationRBACResource, "sessions.search")
 }
 
 func (svc accessControl) CanReadWorkflow(ctx context.Context, u *types.Workflow) bool {
@@ -77,20 +77,20 @@ func (svc accessControl) CanDeleteWorkflow(ctx context.Context, u *types.Workflo
 	return svc.can(ctx, u.RBACResource(), "delete")
 }
 
+func (svc accessControl) CanUndeleteWorkflow(ctx context.Context, u *types.Workflow) bool {
+	return svc.can(ctx, u.RBACResource(), "undelete")
+}
+
 func (svc accessControl) CanExecuteWorkflow(ctx context.Context, u *types.Workflow) bool {
 	return svc.can(ctx, u.RBACResource(), "execute")
 }
 
-func (svc accessControl) CanDebugWorkflow(ctx context.Context, u *types.Workflow) bool {
-	return svc.can(ctx, u.RBACResource(), "debug")
-}
-
 func (svc accessControl) CanManageWorkflowTriggers(ctx context.Context, u *types.Workflow) bool {
-	return svc.can(ctx, u.RBACResource(), "trigger.manage")
+	return svc.can(ctx, u.RBACResource(), "triggers.manage")
 }
 
 func (svc accessControl) CanManageWorkflowSessions(ctx context.Context, u *types.Workflow) bool {
-	return svc.can(ctx, u.RBACResource(), "session.manage")
+	return svc.can(ctx, u.RBACResource(), "sessions.manage")
 }
 
 func (svc accessControl) can(ctx context.Context, res rbac.Resource, op rbac.Operation, ff ...rbac.CheckAccessFunc) bool {
@@ -153,8 +153,8 @@ func (svc accessControl) Whitelist() rbac.Whitelist {
 		"access",
 		"grant",
 		"workflow.create",
-		"trigger.search",
-		"session.search",
+		"triggers.search",
+		"sessions.search",
 	)
 
 	wl.Set(
@@ -162,10 +162,10 @@ func (svc accessControl) Whitelist() rbac.Whitelist {
 		"read",
 		"update",
 		"delete",
+		"undelete",
 		"execute",
-		"debug",
-		"trigger.manage",
-		"session.manage",
+		"triggers.manage",
+		"sessions.manage",
 	)
 
 	return wl

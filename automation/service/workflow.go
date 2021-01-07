@@ -51,6 +51,7 @@ type (
 		CanReadWorkflow(context.Context, *types.Workflow) bool
 		CanUpdateWorkflow(context.Context, *types.Workflow) bool
 		CanDeleteWorkflow(context.Context, *types.Workflow) bool
+		CanUndeleteWorkflow(context.Context, *types.Workflow) bool
 
 		Grant(ctx context.Context, rr ...*rbac.Rule) error
 	}
@@ -129,7 +130,7 @@ func (svc *workflow) RegisteredFn() []*fn.Function {
 	return ff
 }
 
-func (svc *workflow) Find(ctx context.Context, filter types.WorkflowFilter) (rr types.WorkflowSet, f types.WorkflowFilter, err error) {
+func (svc *workflow) Search(ctx context.Context, filter types.WorkflowFilter) (rr types.WorkflowSet, f types.WorkflowFilter, err error) {
 	var (
 		wap = &workflowActionProps{filter: &filter}
 	)
@@ -187,7 +188,7 @@ func (svc *workflow) Find(ctx context.Context, filter types.WorkflowFilter) (rr 
 	return rr, filter, svc.recordAction(ctx, wap, WorkflowActionSearch, err)
 }
 
-func (svc *workflow) FindByID(ctx context.Context, workflowID uint64) (wf *types.Workflow, err error) {
+func (svc *workflow) LookupByID(ctx context.Context, workflowID uint64) (wf *types.Workflow, err error) {
 	var (
 		wap = &workflowActionProps{workflow: &types.Workflow{ID: workflowID}}
 	)
@@ -264,7 +265,14 @@ func (svc *workflow) Create(ctx context.Context, new *types.Workflow) (wf *types
 
 // Update modifies existing workflow resource in the store
 func (svc *workflow) Update(ctx context.Context, upd *types.Workflow) (*types.Workflow, error) {
-	return svc.updater(ctx, upd.ID, WorkflowActionUpdate, svc.handleUpdate(upd))
+	return svc.updater(ctx, upd.ID, WorkflowActionUpdate, func(ctx context.Context, res *types.Workflow) (workflowChanges, error) {
+		if !svc.ac.CanUpdateWorkflow(ctx, res) {
+			return workflowUnchanged, WorkflowErrNotAllowedToUpdate()
+		}
+
+		handler := svc.handleUpdate(upd)
+		return handler(ctx, res)
+	})
 }
 
 func (svc *workflow) DeleteByID(ctx context.Context, workflowID uint64) error {
@@ -346,10 +354,6 @@ func (svc workflow) updater(ctx context.Context, workflowID uint64, action func(
 
 func (svc workflow) handleUpdate(upd *types.Workflow) workflowUpdateHandler {
 	return func(ctx context.Context, res *types.Workflow) (changes workflowChanges, err error) {
-		if !svc.ac.CanUpdateWorkflow(ctx, res) {
-			return workflowUnchanged, WorkflowErrNotAllowedToUpdate()
-		}
-
 		if isStale(upd.UpdatedAt, res.UpdatedAt, res.CreatedAt) {
 			return workflowUnchanged, WorkflowErrStaleData()
 		}

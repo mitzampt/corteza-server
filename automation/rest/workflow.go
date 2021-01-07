@@ -14,8 +14,8 @@ import (
 type (
 	Workflow struct {
 		svc interface {
-			Find(ctx context.Context, filter types.WorkflowFilter) (types.WorkflowSet, types.WorkflowFilter, error)
-			FindByID(ctx context.Context, workflowID uint64) (*types.Workflow, error)
+			Search(ctx context.Context, filter types.WorkflowFilter) (types.WorkflowSet, types.WorkflowFilter, error)
+			LookupByID(ctx context.Context, workflowID uint64) (*types.Workflow, error)
 			Create(ctx context.Context, new *types.Workflow) (*types.Workflow, error)
 			Update(ctx context.Context, upd *types.Workflow) (*types.Workflow, error)
 			DeleteByID(ctx context.Context, workflowID uint64) error
@@ -55,7 +55,7 @@ func (ctrl Workflow) List(ctx context.Context, r *request.WorkflowList) (interfa
 		return nil, err
 	}
 
-	set, filter, err := ctrl.svc.Find(ctx, f)
+	set, filter, err := ctrl.svc.Search(ctx, f)
 	return ctrl.makeFilterPayload(ctx, set, filter, err)
 }
 
@@ -97,7 +97,7 @@ func (ctrl Workflow) Update(ctx context.Context, r *request.WorkflowUpdate) (int
 }
 
 func (ctrl Workflow) Read(ctx context.Context, r *request.WorkflowRead) (interface{}, error) {
-	return ctrl.svc.FindByID(ctx, r.WorkflowID)
+	return ctrl.svc.LookupByID(ctx, r.WorkflowID)
 }
 
 func (ctrl Workflow) Test(ctx context.Context, r *request.WorkflowTest) (interface{}, error) {

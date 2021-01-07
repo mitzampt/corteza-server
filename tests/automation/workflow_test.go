@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/cortezaproject/corteza-server/automation/service"
 	"github.com/cortezaproject/corteza-server/automation/types"
+	"github.com/cortezaproject/corteza-server/pkg/filter"
 	"github.com/cortezaproject/corteza-server/pkg/id"
 	"github.com/cortezaproject/corteza-server/store"
 	"github.com/cortezaproject/corteza-server/tests/helpers"
@@ -37,6 +38,7 @@ func (h helper) repoMakeWorkflow(ss ...string) *types.Workflow {
 	var r = &types.Workflow{
 		ID:        id.Next(),
 		CreatedAt: time.Now(),
+		Enabled:   true,
 	}
 
 	if len(ss) > 1 {
@@ -369,11 +371,15 @@ func TestWorkflowLabels(t *testing.T) {
 		}
 
 		var (
-			req = require.New(t)
-			set = types.WorkflowSet{}
+			req    = require.New(t)
+			set    = types.WorkflowSet{}
+			params = url.Values{}
 		)
 
-		helpers.SearchWithLabelsViaAPI(h.apiInit(), t, "/workflows/", &set, url.Values{"labels": []string{"baz=123"}})
+		params.Add("labels", "baz=123")
+		params.Add("disabled", filter.StateInclusive.String())
+
+		helpers.SearchWithLabelsViaAPI(h.apiInit(), t, "/workflows/", &set, params)
 		req.NotEmpty(set)
 		req.NotNil(set.FindByID(ID))
 		req.NotNil(set.FindByID(ID).Labels)

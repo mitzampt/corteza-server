@@ -4,30 +4,31 @@ allow:
       - access
       - grant
       - workflow.create
-      - trigger.search
-      - session.search
+      - triggers.search
+      - sessions.search
 
     automation:workflow:
       - read
       - update
       - delete
       - execute
-      - diagnose
-      - trigger.manage
+      - triggers.manage
+      - sessions.manage
 
   developers:
     automation:
       - access
       - grant
       - workflow.create
+      - triggers.search
+      - sessions.search
 
     automation:workflow:
       - read
       - update
       - delete
       - execute
-      - diagnose
-      - trigger.manage
-      - session.manage
+      - triggers.manage
+      - sessions.manage
 
 
