@@ -15,10 +15,9 @@ import (
 type (
 	Session struct {
 		svc interface {
-			Find(ctx context.Context, filter types.SessionFilter) (types.SessionSet, types.SessionFilter, error)
-			FindByID(ctx context.Context, sessionID uint64) (*types.Session, error)
+			Search(ctx context.Context, filter types.SessionFilter) (types.SessionSet, types.SessionFilter, error)
+			LookupByID(ctx context.Context, sessionID uint64) (*types.Session, error)
 			Resume(sessionID, stateID uint64, i auth.Identifiable, input types.Variables) error
-			//DeleteByID(ctx context.Context, sessionID uint64) error
 		}
 	}
 
@@ -55,12 +54,12 @@ func (ctrl Session) List(ctx context.Context, r *request.SessionList) (interface
 		return nil, err
 	}
 
-	set, filter, err := ctrl.svc.Find(ctx, f)
+	set, filter, err := ctrl.svc.Search(ctx, f)
 	return ctrl.makeFilterPayload(ctx, set, filter, err)
 }
 
 func (ctrl Session) Read(ctx context.Context, r *request.SessionRead) (interface{}, error) {
-	return ctrl.svc.FindByID(ctx, r.SessionID)
+	return ctrl.svc.LookupByID(ctx, r.SessionID)
 }
 
 func (ctrl Session) Delete(ctx context.Context, r *request.SessionDelete) (interface{}, error) {
@@ -70,7 +69,6 @@ func (ctrl Session) Delete(ctx context.Context, r *request.SessionDelete) (inter
 
 func (ctrl Session) Resume(ctx context.Context, r *request.SessionResume) (interface{}, error) {
 	return api.OK(), ctrl.svc.Resume(r.SessionID, r.StateID, auth.GetIdentityFromContext(ctx), r.Input)
-	//return api.OK(), ctrl.svc.UndeleteByID(ctx, r.SessionID)
 }
 
 func (ctrl Session) Trace(ctx context.Context, trace *request.SessionTrace) (interface{}, error) {

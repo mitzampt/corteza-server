@@ -2,6 +2,7 @@ package filter
 
 import (
 	"github.com/Masterminds/squirrel"
+	"strconv"
 )
 
 type (
@@ -21,6 +22,10 @@ const (
 	// StateExclusive only entries that have this state
 	StateExclusive State = 2
 )
+
+func (s State) String() string {
+	return strconv.Itoa(int(s))
+}
 
 // squirrel.SelectBuilder
 func StateCondition(q squirrel.SelectBuilder, field string, fs State) squirrel.SelectBuilder {

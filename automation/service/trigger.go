@@ -74,7 +74,7 @@ func Trigger(log *zap.Logger) *trigger {
 	}
 }
 
-func (svc *trigger) Find(ctx context.Context, filter types.TriggerFilter) (rr types.TriggerSet, f types.TriggerFilter, err error) {
+func (svc *trigger) Search(ctx context.Context, filter types.TriggerFilter) (rr types.TriggerSet, f types.TriggerFilter, err error) {
 	var (
 		wap = &triggerActionProps{filter: &filter}
 	)
@@ -116,7 +116,7 @@ func (svc *trigger) Find(ctx context.Context, filter types.TriggerFilter) (rr ty
 	return rr, filter, svc.recordAction(ctx, wap, TriggerActionSearch, err)
 }
 
-func (svc *trigger) FindByID(ctx context.Context, triggerID uint64) (res *types.Trigger, err error) {
+func (svc *trigger) LookupByID(ctx context.Context, triggerID uint64) (res *types.Trigger, err error) {
 	var (
 		wap = &triggerActionProps{trigger: &types.Trigger{ID: triggerID}}
 	)
@@ -197,7 +197,14 @@ func (svc *trigger) Create(ctx context.Context, new *types.Trigger) (res *types.
 
 // Update modifies existing trigger resource in the store
 func (svc *trigger) Update(ctx context.Context, upd *types.Trigger) (*types.Trigger, error) {
-	return svc.updater(ctx, upd.ID, TriggerActionUpdate, svc.handleUpdate(upd))
+	return svc.updater(ctx, upd.ID, TriggerActionUpdate, func(ctx context.Context, res *types.Trigger) (triggerChanges, error) {
+		if err := svc.canManageTrigger(ctx, res, TriggerErrNotAllowedToUpdate()); err != nil {
+			return triggerUnchanged, err
+		}
+
+		handler := svc.handleUpdate(upd)
+		return handler(ctx, res)
+	})
 }
 
 func (svc *trigger) DeleteByID(ctx context.Context, triggerID uint64) error {
@@ -253,16 +260,8 @@ func (svc trigger) updater(ctx context.Context, triggerID uint64, action func(..
 
 func (svc trigger) handleUpdate(upd *types.Trigger) triggerUpdateHandler {
 	return func(ctx context.Context, res *types.Trigger) (changes triggerChanges, err error) {
-		if err := svc.canManageTrigger(ctx, res); err != nil {
-			return triggerUnchanged, err
-		}
-
 		if isStale(upd.UpdatedAt, res.UpdatedAt, res.CreatedAt) {
 			return triggerUnchanged, TriggerErrStaleData()
-		}
-
-		if res.WorkflowID != upd.WorkflowID {
-			return triggerUnchanged, TriggerErrNotAllowedToUpdate()
 		}
 
 		if res.Enabled != upd.Enabled {
@@ -328,7 +327,7 @@ func (svc trigger) handleUpdate(upd *types.Trigger) triggerUpdateHandler {
 }
 
 func (svc trigger) handleDelete(ctx context.Context, res *types.Trigger) (triggerChanges, error) {
-	if err := svc.canManageTrigger(ctx, res); err != nil {
+	if err := svc.canManageTrigger(ctx, res, TriggerErrNotAllowedToDelete()); err != nil {
 		return triggerUnchanged, err
 	}
 
@@ -342,7 +341,7 @@ func (svc trigger) handleDelete(ctx context.Context, res *types.Trigger) (trigge
 }
 
 func (svc trigger) handleUndelete(ctx context.Context, res *types.Trigger) (triggerChanges, error) {
-	if err := svc.canManageTrigger(ctx, res); err != nil {
+	if err := svc.canManageTrigger(ctx, res, TriggerErrNotAllowedToUndelete()); err != nil {
 		return triggerUnchanged, err
 	}
 
@@ -355,11 +354,11 @@ func (svc trigger) handleUndelete(ctx context.Context, res *types.Trigger) (trig
 	return triggerChanged, nil
 }
 
-func (svc trigger) canManageTrigger(ctx context.Context, res *types.Trigger) error {
+func (svc trigger) canManageTrigger(ctx context.Context, res *types.Trigger, permErr error) error {
 	if wf, err := loadWorkflow(ctx, svc.store, res.WorkflowID); err != nil {
 		return err
 	} else if !svc.ac.CanManageWorkflowTriggers(ctx, wf) {
-		return TriggerErrNotAllowedToUpdate()
+		return permErr
 	} else {
 		return nil
 	}

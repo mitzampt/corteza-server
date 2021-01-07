@@ -49,9 +49,9 @@ func Session(log *zap.Logger) *session {
 	}
 }
 
-func (svc *session) Find(ctx context.Context, filter types.SessionFilter) (rr types.SessionSet, f types.SessionFilter, err error) {
+func (svc *session) Search(ctx context.Context, filter types.SessionFilter) (rr types.SessionSet, f types.SessionFilter, err error) {
 	var (
-		wap = &sessionActionProps{filter: &filter}
+		sap = &sessionActionProps{filter: &filter}
 	)
 
 	err = func() (err error) {
@@ -66,35 +66,53 @@ func (svc *session) Find(ctx context.Context, filter types.SessionFilter) (rr ty
 		return nil
 	}()
 
-	return rr, filter, svc.recordAction(ctx, wap, SessionActionSearch, err)
+	return rr, filter, svc.recordAction(ctx, sap, SessionActionSearch, err)
 }
 
-func (svc *session) FindByID(ctx context.Context, sessionID uint64) (res *types.Session, err error) {
+func (svc *session) LookupByID(ctx context.Context, sessionID uint64) (res *types.Session, err error) {
 	var (
-		wap = &sessionActionProps{session: &types.Session{ID: sessionID}}
+		sap = &sessionActionProps{session: &types.Session{ID: sessionID}}
+		wf  *types.Workflow
 	)
 
 	err = store.Tx(ctx, svc.store, func(ctx context.Context, s store.Storer) error {
+		if !svc.ac.CanSearchSessions(ctx) {
+			return SessionErrNotAllowedToRead()
+		}
+
 		if res, err = loadSession(ctx, s, sessionID); err != nil {
 			return err
+		}
+
+		if wf, err = loadWorkflow(ctx, s, res.WorkflowID); err != nil {
+			return err
+		}
+
+		if !svc.ac.CanManageWorkflowSessions(ctx, wf) {
+			return SessionErrNotAllowedToManage()
 		}
 
 		return nil
 	})
 
-	return res, svc.recordAction(ctx, wap, SessionActionLookup, err)
+	return res, svc.recordAction(ctx, sap, SessionActionLookup, err)
 }
 
 func (svc *session) resumeAll(ctx context.Context) error {
+	// @todo resume active sessions from storage
 	return nil
 }
 
 func (svc *session) suspendAll(ctx context.Context) error {
+	// @todo suspend active sessions to storage
 	return nil
 }
 
 // Start new workflow session on a specific step with a given identity and scope
-//func (svc *session) Start(g *wfexec.Graph, stepID uint64, i auth.Identifiable, input types.Variables, keepFor int, trace bool) error {
+//
+// Start is an asynchronous operation
+//
+// It does not check user's permissions to execute workflow(s) so it should be used only when !
 func (svc *session) Start(g *wfexec.Graph, i auth.Identifiable, ssp types.SessionStartParams) error {
 	var (
 		ctx   = auth.SetIdentityToContext(context.Background(), i)

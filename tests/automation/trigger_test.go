@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"github.com/cortezaproject/corteza-server/automation/service"
 	"github.com/cortezaproject/corteza-server/automation/types"
+	"github.com/cortezaproject/corteza-server/pkg/filter"
 	"github.com/cortezaproject/corteza-server/pkg/id"
 	"github.com/cortezaproject/corteza-server/store"
 	"github.com/cortezaproject/corteza-server/tests/helpers"
+	"github.com/steinfletcher/apitest"
 	"github.com/steinfletcher/apitest-jsonpath"
 	"github.com/stretchr/testify/require"
 	"net/http"
@@ -33,10 +35,11 @@ func (h helper) createTrigger(res *types.Trigger) *types.Trigger {
 	return res
 }
 
-func (h helper) repoMakeTrigger(ss ...string) *types.Trigger {
+func (h helper) repoMakeTrigger(wf *types.Workflow, ss ...string) *types.Trigger {
 	var r = &types.Trigger{
-		ID:        id.Next(),
-		CreatedAt: time.Now(),
+		ID:         id.Next(),
+		CreatedAt:  time.Now(),
+		WorkflowID: wf.ID,
 	}
 
 	if len(ss) > 1 {
@@ -45,6 +48,8 @@ func (h helper) repoMakeTrigger(ss ...string) *types.Trigger {
 		r.ResourceType = "h_" + rs()
 
 	}
+
+	r.Enabled = true
 
 	h.a.NoError(store.CreateAutomationTrigger(context.Background(), service.DefaultStore, r))
 
@@ -61,18 +66,19 @@ func TestTriggerRead(t *testing.T) {
 	h := newHelper(t)
 	h.clearTriggers()
 
-	wf := h.repoMakeTrigger()
-	h.allow(types.TriggerRBACResource.AppendID(wf.ID), "read")
+	wf := h.repoMakeWorkflow()
+	tg := h.repoMakeTrigger(wf)
+
+	h.allow(types.AutomationRBACResource, "triggers.search")
 
 	h.apiInit().
-		Debug().
-		Get(fmt.Sprintf("/triggers/%d", wf.ID)).
+		Get(fmt.Sprintf("/triggers/%d", tg.ID)).
 		Header("Accept", "application/json").
 		Expect(t).
 		Status(http.StatusOK).
 		Assert(helpers.AssertNoErrors).
-		Assert(jsonpath.Equal(`$.response.resourceType`, wf.ResourceType)).
-		Assert(jsonpath.Equal(`$.response.triggerID`, fmt.Sprintf("%d", wf.ID))).
+		Assert(jsonpath.Equal(`$.response.resourceType`, tg.ResourceType)).
+		Assert(jsonpath.Equal(`$.response.triggerID`, fmt.Sprintf("%d", tg.ID))).
 		End()
 }
 
@@ -80,10 +86,11 @@ func TestTriggerList(t *testing.T) {
 	h := newHelper(t)
 	h.clearTriggers()
 
-	h.allow(types.TriggerRBACResource.AppendWildcard(), "read")
+	h.allow(types.AutomationRBACResource, "triggers.search")
 
-	h.repoMakeTrigger()
-	h.repoMakeTrigger()
+	wf := h.repoMakeWorkflow()
+	h.repoMakeTrigger(wf)
+	h.repoMakeTrigger(wf)
 
 	h.apiInit().
 		Get("/triggers/").
@@ -95,64 +102,52 @@ func TestTriggerList(t *testing.T) {
 		End()
 }
 
-func TestTriggerList_filterForbidden(t *testing.T) {
-	h := newHelper(t)
-
-	h.clearTriggers()
-	h.repoMakeTrigger("trigger")
-	f := h.repoMakeTrigger()
-
-	h.deny(types.TriggerRBACResource.AppendID(f.ID), "read")
-
-	h.apiInit().
-		Get("/triggers/").
-		Query("resourceType", f.ResourceType).
-		Header("Accept", "application/json").
-		Expect(t).
-		Status(http.StatusOK).
-		Assert(helpers.AssertNoErrors).
-		Assert(jsonpath.NotPresent(fmt.Sprintf(`$.response.set[? @.resourceType=="%s"]`, f.ResourceType))).
-		End()
-}
-
-func TestTriggerCreateForbidden(t *testing.T) {
-	h := newHelper(t)
-
-	h.apiInit().
-		Post("/triggers/").
-		Header("Accept", "application/json").
-		FormData("name", rs()).
-		Expect(t).
-		Status(http.StatusOK).
-		Assert(helpers.AssertError("not allowed to create triggers")).
-		End()
-}
-
 func TestTriggerCreate(t *testing.T) {
 	h := newHelper(t)
-	h.allow(types.AutomationRBACResource, "trigger.create")
+	h.clearTriggers()
+	h.clearWorkflows()
 
-	h.apiInit().
-		Post("/triggers/").
-		FormData("name", rs()).
-		FormData("resourceType", "resourceType_"+rs()).
-		Header("Accept", "application/json").
-		Expect(t).
-		Status(http.StatusOK).
-		Assert(helpers.AssertNoErrors).
-		End()
+	var (
+		wf  = h.repoMakeWorkflow()
+		req = func() *apitest.Request {
+			return h.apiInit().
+				Post("/triggers/").
+				Header("Accept", "application/json").
+				FormData("name", rs()).
+				FormData("workflowID", fmt.Sprintf("%d", wf.ID))
+
+		}
+	)
+
+	t.Run("allowed", func(t *testing.T) {
+		h.allow(types.WorkflowRBACResource.AppendID(wf.ID), "triggers.manage")
+		req().Expect(t).
+			Status(http.StatusOK).
+			Assert(helpers.AssertNoErrors).
+			End()
+	})
+
+	t.Run("denied", func(t *testing.T) {
+		h.deny(types.WorkflowRBACResource.AppendID(wf.ID), "triggers.manage")
+		req().Expect(t).
+			Status(http.StatusOK).
+			Assert(helpers.AssertError("not allowed to create triggers")).
+			End()
+	})
 }
 
 func TestTriggerCreateFull(t *testing.T) {
 	h := newHelper(t)
 
-	h.allow(types.AutomationRBACResource, "trigger.create")
+	h.allow(types.WorkflowRBACResource.AppendWildcard(), "triggers.manage")
 
 	h.clearTriggers()
 	var (
+		wf     = h.repoMakeWorkflow()
 		output = &types.Trigger{}
 		stored = &types.Trigger{}
 		input  = &types.Trigger{
+			WorkflowID:   wf.ID,
 			ResourceType: "wf-full-test",
 			Enabled:      true,
 			OwnedBy:      42,
@@ -181,7 +176,7 @@ func TestTriggerCreateFull(t *testing.T) {
 
 	h.a.Equal(input, output)
 
-	h.allow(types.TriggerRBACResource.AppendID(output.ID), "read")
+	h.allow(types.AutomationRBACResource, "triggers.search")
 
 	h.apiInit().
 		Get(fmt.Sprintf("/triggers/%d", output.ID)).
@@ -193,64 +188,77 @@ func TestTriggerCreateFull(t *testing.T) {
 		JSON(&struct{ Response *types.Trigger }{stored})
 
 	h.a.Equal(input, stored)
-
-}
-
-func TestTriggerUpdateForbidden(t *testing.T) {
-	h := newHelper(t)
-	u := h.repoMakeTrigger()
-
-	h.apiInit().
-		Put(fmt.Sprintf("/triggers/%d", u.ID)).
-		Header("Accept", "application/json").
-		FormData("email", rs()).
-		Expect(t).
-		Status(http.StatusOK).
-		Assert(helpers.AssertError("not allowed to update this trigger")).
-		End()
 }
 
 func TestTriggerUpdate(t *testing.T) {
 	h := newHelper(t)
-	res := h.repoMakeTrigger()
-	h.allow(types.TriggerRBACResource.AppendWildcard(), "update")
+	h.clearTriggers()
+	h.clearWorkflows()
 
-	newName := "updated-" + rs()
-	newResourceType := "updated-" + rs()
+	var (
+		wf  = h.repoMakeWorkflow()
+		tg1 = h.createTrigger(&types.Trigger{WorkflowID: wf.ID, ResourceType: "as-created"})
+		tg2 = h.createTrigger(&types.Trigger{WorkflowID: wf.ID, ResourceType: "as-created"})
 
-	h.apiInit().
-		Put(fmt.Sprintf("/triggers/%d", res.ID)).
-		FormData("name", newName).
-		FormData("resourceType", newResourceType).
-		Header("Accept", "application/json").
-		Expect(t).
-		Status(http.StatusOK).
-		Assert(helpers.AssertNoErrors).
-		End()
+		req = func(id uint64, resType string) *apitest.Request {
+			return h.apiInit().
+				Put(fmt.Sprintf("/triggers/%d", id)).
+				Header("Accept", "application/json").
+				FormData("resourceType", resType)
 
-	res = h.lookupTriggerByID(res.ID)
-	h.a.NotNil(res)
-	h.a.Equal(newResourceType, res.ResourceType)
+		}
+	)
+
+	t.Run("allowed", func(t *testing.T) {
+		h.allow(types.WorkflowRBACResource.AppendID(wf.ID), "triggers.manage")
+		req(tg1.ID, "foo").Expect(t).
+			Status(http.StatusOK).
+			Assert(helpers.AssertNoErrors).
+			End()
+
+		res := h.lookupTriggerByID(tg1.ID)
+		h.a.NotNil(res)
+		h.a.Equal("foo", res.ResourceType)
+	})
+
+	t.Run("denied", func(t *testing.T) {
+		h.deny(types.WorkflowRBACResource.AppendID(wf.ID), "triggers.manage")
+		req(tg2.ID, "bar").Expect(t).
+			Status(http.StatusOK).
+			Assert(helpers.AssertError("not allowed to update this trigger")).
+			End()
+
+		res := h.lookupTriggerByID(tg2.ID)
+		h.a.NotNil(res)
+		h.a.NotEqual("bar", res.ResourceType)
+	})
 }
 
 func TestTriggerDeleteForbidden(t *testing.T) {
 	h := newHelper(t)
-	u := h.repoMakeTrigger()
+
+	wf := h.repoMakeWorkflow()
+	res := h.repoMakeTrigger(wf)
 
 	h.apiInit().
-		Delete(fmt.Sprintf("/triggers/%d", u.ID)).
+		Delete(fmt.Sprintf("/triggers/%d", res.ID)).
 		Header("Accept", "application/json").
 		Expect(t).
 		Status(http.StatusOK).
 		Assert(helpers.AssertError("not allowed to delete this trigger")).
 		End()
+
+	res = h.lookupTriggerByID(res.ID)
+	h.a.NotNil(res)
+	h.a.Nil(res.DeletedAt)
 }
 
 func TestTriggerDelete(t *testing.T) {
 	h := newHelper(t)
-	h.allow(types.TriggerRBACResource.AppendWildcard(), "delete")
+	h.allow(types.WorkflowRBACResource.AppendWildcard(), "triggers.manage")
 
-	res := h.repoMakeTrigger()
+	wf := h.repoMakeWorkflow()
+	res := h.repoMakeTrigger(wf)
 
 	h.apiInit().
 		Delete(fmt.Sprintf("/triggers/%d", res.ID)).
@@ -269,13 +277,12 @@ func TestTriggerLabels(t *testing.T) {
 	h := newHelper(t)
 	h.clearTriggers()
 
-	h.allow(types.AutomationRBACResource, "trigger.create")
-	h.allow(types.TriggerRBACResource.AppendWildcard(), "read")
-	h.allow(types.TriggerRBACResource.AppendWildcard(), "update")
-	h.allow(types.TriggerRBACResource.AppendWildcard(), "delete")
+	h.allow(types.WorkflowRBACResource.AppendWildcard(), "triggers.manage")
+	h.allow(types.AutomationRBACResource, "triggers.search")
 
 	var (
 		ID uint64
+		wf = h.repoMakeWorkflow()
 	)
 
 	t.Run("create", func(t *testing.T) {
@@ -286,7 +293,7 @@ func TestTriggerLabels(t *testing.T) {
 
 		helpers.SetLabelsViaAPI(h.apiInit(), t,
 			"/triggers/",
-			types.Trigger{Labels: map[string]string{"foo": "bar", "bar": "42"}},
+			types.Trigger{Labels: map[string]string{"foo": "bar", "bar": "42"}, WorkflowID: wf.ID},
 			payload,
 		)
 		req.NotZero(payload.ID)
@@ -313,7 +320,7 @@ func TestTriggerLabels(t *testing.T) {
 
 		helpers.SetLabelsViaAPI(h.apiInit(), t,
 			fmt.Sprintf("PUT /triggers/%d", ID),
-			&types.Trigger{Labels: map[string]string{"foo": "baz", "baz": "123"}},
+			&types.Trigger{Labels: map[string]string{"foo": "baz", "baz": "123"}, WorkflowID: wf.ID},
 			payload,
 		)
 		req.NotZero(payload.ID)
@@ -335,11 +342,14 @@ func TestTriggerLabels(t *testing.T) {
 		}
 
 		var (
-			req = require.New(t)
-			set = types.TriggerSet{}
+			req    = require.New(t)
+			set    = types.TriggerSet{}
+			params = url.Values{}
 		)
+		params.Add("labels", "baz=123")
+		params.Add("disabled", filter.StateInclusive.String())
 
-		helpers.SearchWithLabelsViaAPI(h.apiInit(), t, "/triggers/", &set, url.Values{"labels": []string{"baz=123"}})
+		helpers.SearchWithLabelsViaAPI(h.apiInit(), t, "/triggers/", &set, params)
 		req.NotEmpty(set)
 		req.NotNil(set.FindByID(ID))
 		req.NotNil(set.FindByID(ID).Labels)
