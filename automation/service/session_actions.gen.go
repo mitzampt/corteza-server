@@ -223,14 +223,14 @@ func (e *sessionAction) ToAction() *actionlog.Action {
 // *********************************************************************************************************************
 // Action constructors
 
-// SessionActionSearch returns "system:session.search" action
+// SessionActionSearch returns "automation:session.search" action
 //
 // This function is auto-generated.
 //
 func SessionActionSearch(props ...*sessionActionProps) *sessionAction {
 	a := &sessionAction{
 		timestamp: time.Now(),
-		resource:  "system:session",
+		resource:  "automation:session",
 		action:    "search",
 		log:       "searched for matching sessions",
 		severity:  actionlog.Info,
@@ -243,14 +243,14 @@ func SessionActionSearch(props ...*sessionActionProps) *sessionAction {
 	return a
 }
 
-// SessionActionLookup returns "system:session.lookup" action
+// SessionActionLookup returns "automation:session.lookup" action
 //
 // This function is auto-generated.
 //
 func SessionActionLookup(props ...*sessionActionProps) *sessionAction {
 	a := &sessionAction{
 		timestamp: time.Now(),
-		resource:  "system:session",
+		resource:  "automation:session",
 		action:    "lookup",
 		log:       "looked-up for a {session}",
 		severity:  actionlog.Info,
@@ -263,14 +263,14 @@ func SessionActionLookup(props ...*sessionActionProps) *sessionAction {
 	return a
 }
 
-// SessionActionCreate returns "system:session.create" action
+// SessionActionCreate returns "automation:session.create" action
 //
 // This function is auto-generated.
 //
 func SessionActionCreate(props ...*sessionActionProps) *sessionAction {
 	a := &sessionAction{
 		timestamp: time.Now(),
-		resource:  "system:session",
+		resource:  "automation:session",
 		action:    "create",
 		log:       "created {session}",
 		severity:  actionlog.Info,
@@ -283,14 +283,14 @@ func SessionActionCreate(props ...*sessionActionProps) *sessionAction {
 	return a
 }
 
-// SessionActionUpdate returns "system:session.update" action
+// SessionActionUpdate returns "automation:session.update" action
 //
 // This function is auto-generated.
 //
 func SessionActionUpdate(props ...*sessionActionProps) *sessionAction {
 	a := &sessionAction{
 		timestamp: time.Now(),
-		resource:  "system:session",
+		resource:  "automation:session",
 		action:    "update",
 		log:       "updated {session}",
 		severity:  actionlog.Info,
@@ -303,14 +303,14 @@ func SessionActionUpdate(props ...*sessionActionProps) *sessionAction {
 	return a
 }
 
-// SessionActionDelete returns "system:session.delete" action
+// SessionActionDelete returns "automation:session.delete" action
 //
 // This function is auto-generated.
 //
 func SessionActionDelete(props ...*sessionActionProps) *sessionAction {
 	a := &sessionAction{
 		timestamp: time.Now(),
-		resource:  "system:session",
+		resource:  "automation:session",
 		action:    "delete",
 		log:       "deleted {session}",
 		severity:  actionlog.Info,
@@ -323,14 +323,14 @@ func SessionActionDelete(props ...*sessionActionProps) *sessionAction {
 	return a
 }
 
-// SessionActionUndelete returns "system:session.undelete" action
+// SessionActionUndelete returns "automation:session.undelete" action
 //
 // This function is auto-generated.
 //
 func SessionActionUndelete(props ...*sessionActionProps) *sessionAction {
 	a := &sessionAction{
 		timestamp: time.Now(),
-		resource:  "system:session",
+		resource:  "automation:session",
 		action:    "undelete",
 		log:       "undeleted {session}",
 		severity:  actionlog.Info,
@@ -347,7 +347,7 @@ func SessionActionUndelete(props ...*sessionActionProps) *sessionAction {
 // *********************************************************************************************************************
 // Error constructors
 
-// SessionErrGeneric returns "system:session.generic" as *errors.Error
+// SessionErrGeneric returns "automation:session.generic" as *errors.Error
 //
 //
 // This function is auto-generated.
@@ -364,7 +364,7 @@ func SessionErrGeneric(mm ...*sessionActionProps) *errors.Error {
 		p.Format("failed to complete request due to internal error", nil),
 
 		errors.Meta("type", "generic"),
-		errors.Meta("resource", "system:session"),
+		errors.Meta("resource", "automation:session"),
 
 		// action log entry; no formatting, it will be applied inside recordAction fn.
 		errors.Meta(sessionLogMetaKey{}, "{err}"),
@@ -379,7 +379,7 @@ func SessionErrGeneric(mm ...*sessionActionProps) *errors.Error {
 	return e
 }
 
-// SessionErrNotFound returns "system:session.notFound" as *errors.Error
+// SessionErrNotFound returns "automation:session.notFound" as *errors.Error
 //
 //
 // This function is auto-generated.
@@ -396,7 +396,7 @@ func SessionErrNotFound(mm ...*sessionActionProps) *errors.Error {
 		p.Format("session not found", nil),
 
 		errors.Meta("type", "notFound"),
-		errors.Meta("resource", "system:session"),
+		errors.Meta("resource", "automation:session"),
 
 		errors.Meta(sessionPropsMetaKey{}, p),
 
@@ -409,7 +409,7 @@ func SessionErrNotFound(mm ...*sessionActionProps) *errors.Error {
 	return e
 }
 
-// SessionErrInvalidID returns "system:session.invalidID" as *errors.Error
+// SessionErrInvalidID returns "automation:session.invalidID" as *errors.Error
 //
 //
 // This function is auto-generated.
@@ -426,7 +426,7 @@ func SessionErrInvalidID(mm ...*sessionActionProps) *errors.Error {
 		p.Format("invalid ID", nil),
 
 		errors.Meta("type", "invalidID"),
-		errors.Meta("resource", "system:session"),
+		errors.Meta("resource", "automation:session"),
 
 		errors.Meta(sessionPropsMetaKey{}, p),
 
@@ -439,7 +439,7 @@ func SessionErrInvalidID(mm ...*sessionActionProps) *errors.Error {
 	return e
 }
 
-// SessionErrStaleData returns "system:session.staleData" as *errors.Error
+// SessionErrStaleData returns "automation:session.staleData" as *errors.Error
 //
 //
 // This function is auto-generated.
@@ -456,7 +456,7 @@ func SessionErrStaleData(mm ...*sessionActionProps) *errors.Error {
 		p.Format("stale data", nil),
 
 		errors.Meta("type", "staleData"),
-		errors.Meta("resource", "system:session"),
+		errors.Meta("resource", "automation:session"),
 
 		errors.Meta(sessionPropsMetaKey{}, p),
 
@@ -469,7 +469,7 @@ func SessionErrStaleData(mm ...*sessionActionProps) *errors.Error {
 	return e
 }
 
-// SessionErrNotAllowedToRead returns "system:session.notAllowedToRead" as *errors.Error
+// SessionErrNotAllowedToRead returns "automation:session.notAllowedToRead" as *errors.Error
 //
 //
 // This function is auto-generated.
@@ -486,7 +486,7 @@ func SessionErrNotAllowedToRead(mm ...*sessionActionProps) *errors.Error {
 		p.Format("not allowed to read this session", nil),
 
 		errors.Meta("type", "notAllowedToRead"),
-		errors.Meta("resource", "system:session"),
+		errors.Meta("resource", "automation:session"),
 
 		// action log entry; no formatting, it will be applied inside recordAction fn.
 		errors.Meta(sessionLogMetaKey{}, "failed to read {session}; insufficient permissions"),
@@ -501,7 +501,7 @@ func SessionErrNotAllowedToRead(mm ...*sessionActionProps) *errors.Error {
 	return e
 }
 
-// SessionErrNotAllowedToSearch returns "system:session.notAllowedToSearch" as *errors.Error
+// SessionErrNotAllowedToSearch returns "automation:session.notAllowedToSearch" as *errors.Error
 //
 //
 // This function is auto-generated.
@@ -518,7 +518,7 @@ func SessionErrNotAllowedToSearch(mm ...*sessionActionProps) *errors.Error {
 		p.Format("not allowed to search sessions", nil),
 
 		errors.Meta("type", "notAllowedToSearch"),
-		errors.Meta("resource", "system:session"),
+		errors.Meta("resource", "automation:session"),
 
 		// action log entry; no formatting, it will be applied inside recordAction fn.
 		errors.Meta(sessionLogMetaKey{}, "failed to list session; insufficient permissions"),
@@ -533,71 +533,7 @@ func SessionErrNotAllowedToSearch(mm ...*sessionActionProps) *errors.Error {
 	return e
 }
 
-// SessionErrNotAllowedToCreate returns "system:session.notAllowedToCreate" as *errors.Error
-//
-//
-// This function is auto-generated.
-//
-func SessionErrNotAllowedToCreate(mm ...*sessionActionProps) *errors.Error {
-	var p = &sessionActionProps{}
-	if len(mm) > 0 {
-		p = mm[0]
-	}
-
-	var e = errors.New(
-		errors.KindInternal,
-
-		p.Format("not allowed to create sessions", nil),
-
-		errors.Meta("type", "notAllowedToCreate"),
-		errors.Meta("resource", "system:session"),
-
-		// action log entry; no formatting, it will be applied inside recordAction fn.
-		errors.Meta(sessionLogMetaKey{}, "failed to create session; insufficient permissions"),
-		errors.Meta(sessionPropsMetaKey{}, p),
-
-		errors.StackSkip(1),
-	)
-
-	if len(mm) > 0 {
-	}
-
-	return e
-}
-
-// SessionErrNotAllowedToUpdate returns "system:session.notAllowedToUpdate" as *errors.Error
-//
-//
-// This function is auto-generated.
-//
-func SessionErrNotAllowedToUpdate(mm ...*sessionActionProps) *errors.Error {
-	var p = &sessionActionProps{}
-	if len(mm) > 0 {
-		p = mm[0]
-	}
-
-	var e = errors.New(
-		errors.KindInternal,
-
-		p.Format("not allowed to update this session", nil),
-
-		errors.Meta("type", "notAllowedToUpdate"),
-		errors.Meta("resource", "system:session"),
-
-		// action log entry; no formatting, it will be applied inside recordAction fn.
-		errors.Meta(sessionLogMetaKey{}, "failed to update {session}; insufficient permissions"),
-		errors.Meta(sessionPropsMetaKey{}, p),
-
-		errors.StackSkip(1),
-	)
-
-	if len(mm) > 0 {
-	}
-
-	return e
-}
-
-// SessionErrNotAllowedToDelete returns "system:session.notAllowedToDelete" as *errors.Error
+// SessionErrNotAllowedToDelete returns "automation:session.notAllowedToDelete" as *errors.Error
 //
 //
 // This function is auto-generated.
@@ -614,7 +550,7 @@ func SessionErrNotAllowedToDelete(mm ...*sessionActionProps) *errors.Error {
 		p.Format("not allowed to delete this session", nil),
 
 		errors.Meta("type", "notAllowedToDelete"),
-		errors.Meta("resource", "system:session"),
+		errors.Meta("resource", "automation:session"),
 
 		// action log entry; no formatting, it will be applied inside recordAction fn.
 		errors.Meta(sessionLogMetaKey{}, "failed to delete {session}; insufficient permissions"),
@@ -629,12 +565,12 @@ func SessionErrNotAllowedToDelete(mm ...*sessionActionProps) *errors.Error {
 	return e
 }
 
-// SessionErrNotAllowedToUndelete returns "system:session.notAllowedToUndelete" as *errors.Error
+// SessionErrNotAllowedToManage returns "automation:session.notAllowedToManage" as *errors.Error
 //
 //
 // This function is auto-generated.
 //
-func SessionErrNotAllowedToUndelete(mm ...*sessionActionProps) *errors.Error {
+func SessionErrNotAllowedToManage(mm ...*sessionActionProps) *errors.Error {
 	var p = &sessionActionProps{}
 	if len(mm) > 0 {
 		p = mm[0]
@@ -643,13 +579,13 @@ func SessionErrNotAllowedToUndelete(mm ...*sessionActionProps) *errors.Error {
 	var e = errors.New(
 		errors.KindInternal,
 
-		p.Format("not allowed to undelete this session", nil),
+		p.Format("not allowed to manage session's workflow", nil),
 
-		errors.Meta("type", "notAllowedToUndelete"),
-		errors.Meta("resource", "system:session"),
+		errors.Meta("type", "notAllowedToManage"),
+		errors.Meta("resource", "automation:session"),
 
 		// action log entry; no formatting, it will be applied inside recordAction fn.
-		errors.Meta(sessionLogMetaKey{}, "failed to undelete {session}; insufficient permissions"),
+		errors.Meta(sessionLogMetaKey{}, "failed to manage {session}; insufficient permissions"),
 		errors.Meta(sessionPropsMetaKey{}, p),
 
 		errors.StackSkip(1),

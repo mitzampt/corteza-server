@@ -223,14 +223,14 @@ func (e *triggerAction) ToAction() *actionlog.Action {
 // *********************************************************************************************************************
 // Action constructors
 
-// TriggerActionSearch returns "system:trigger.search" action
+// TriggerActionSearch returns "automation:trigger.search" action
 //
 // This function is auto-generated.
 //
 func TriggerActionSearch(props ...*triggerActionProps) *triggerAction {
 	a := &triggerAction{
 		timestamp: time.Now(),
-		resource:  "system:trigger",
+		resource:  "automation:trigger",
 		action:    "search",
 		log:       "searched for matching triggers",
 		severity:  actionlog.Info,
@@ -243,14 +243,14 @@ func TriggerActionSearch(props ...*triggerActionProps) *triggerAction {
 	return a
 }
 
-// TriggerActionLookup returns "system:trigger.lookup" action
+// TriggerActionLookup returns "automation:trigger.lookup" action
 //
 // This function is auto-generated.
 //
 func TriggerActionLookup(props ...*triggerActionProps) *triggerAction {
 	a := &triggerAction{
 		timestamp: time.Now(),
-		resource:  "system:trigger",
+		resource:  "automation:trigger",
 		action:    "lookup",
 		log:       "looked-up for a {trigger}",
 		severity:  actionlog.Info,
@@ -263,14 +263,14 @@ func TriggerActionLookup(props ...*triggerActionProps) *triggerAction {
 	return a
 }
 
-// TriggerActionCreate returns "system:trigger.create" action
+// TriggerActionCreate returns "automation:trigger.create" action
 //
 // This function is auto-generated.
 //
 func TriggerActionCreate(props ...*triggerActionProps) *triggerAction {
 	a := &triggerAction{
 		timestamp: time.Now(),
-		resource:  "system:trigger",
+		resource:  "automation:trigger",
 		action:    "create",
 		log:       "created {trigger}",
 		severity:  actionlog.Info,
@@ -283,14 +283,14 @@ func TriggerActionCreate(props ...*triggerActionProps) *triggerAction {
 	return a
 }
 
-// TriggerActionUpdate returns "system:trigger.update" action
+// TriggerActionUpdate returns "automation:trigger.update" action
 //
 // This function is auto-generated.
 //
 func TriggerActionUpdate(props ...*triggerActionProps) *triggerAction {
 	a := &triggerAction{
 		timestamp: time.Now(),
-		resource:  "system:trigger",
+		resource:  "automation:trigger",
 		action:    "update",
 		log:       "updated {trigger}",
 		severity:  actionlog.Info,
@@ -303,14 +303,14 @@ func TriggerActionUpdate(props ...*triggerActionProps) *triggerAction {
 	return a
 }
 
-// TriggerActionDelete returns "system:trigger.delete" action
+// TriggerActionDelete returns "automation:trigger.delete" action
 //
 // This function is auto-generated.
 //
 func TriggerActionDelete(props ...*triggerActionProps) *triggerAction {
 	a := &triggerAction{
 		timestamp: time.Now(),
-		resource:  "system:trigger",
+		resource:  "automation:trigger",
 		action:    "delete",
 		log:       "deleted {trigger}",
 		severity:  actionlog.Info,
@@ -323,14 +323,14 @@ func TriggerActionDelete(props ...*triggerActionProps) *triggerAction {
 	return a
 }
 
-// TriggerActionUndelete returns "system:trigger.undelete" action
+// TriggerActionUndelete returns "automation:trigger.undelete" action
 //
 // This function is auto-generated.
 //
 func TriggerActionUndelete(props ...*triggerActionProps) *triggerAction {
 	a := &triggerAction{
 		timestamp: time.Now(),
-		resource:  "system:trigger",
+		resource:  "automation:trigger",
 		action:    "undelete",
 		log:       "undeleted {trigger}",
 		severity:  actionlog.Info,
@@ -347,7 +347,7 @@ func TriggerActionUndelete(props ...*triggerActionProps) *triggerAction {
 // *********************************************************************************************************************
 // Error constructors
 
-// TriggerErrGeneric returns "system:trigger.generic" as *errors.Error
+// TriggerErrGeneric returns "automation:trigger.generic" as *errors.Error
 //
 //
 // This function is auto-generated.
@@ -364,7 +364,7 @@ func TriggerErrGeneric(mm ...*triggerActionProps) *errors.Error {
 		p.Format("failed to complete request due to internal error", nil),
 
 		errors.Meta("type", "generic"),
-		errors.Meta("resource", "system:trigger"),
+		errors.Meta("resource", "automation:trigger"),
 
 		// action log entry; no formatting, it will be applied inside recordAction fn.
 		errors.Meta(triggerLogMetaKey{}, "{err}"),
@@ -379,7 +379,7 @@ func TriggerErrGeneric(mm ...*triggerActionProps) *errors.Error {
 	return e
 }
 
-// TriggerErrNotFound returns "system:trigger.notFound" as *errors.Error
+// TriggerErrNotFound returns "automation:trigger.notFound" as *errors.Error
 //
 //
 // This function is auto-generated.
@@ -396,7 +396,7 @@ func TriggerErrNotFound(mm ...*triggerActionProps) *errors.Error {
 		p.Format("trigger not found", nil),
 
 		errors.Meta("type", "notFound"),
-		errors.Meta("resource", "system:trigger"),
+		errors.Meta("resource", "automation:trigger"),
 
 		errors.Meta(triggerPropsMetaKey{}, p),
 
@@ -409,7 +409,7 @@ func TriggerErrNotFound(mm ...*triggerActionProps) *errors.Error {
 	return e
 }
 
-// TriggerErrInvalidID returns "system:trigger.invalidID" as *errors.Error
+// TriggerErrInvalidID returns "automation:trigger.invalidID" as *errors.Error
 //
 //
 // This function is auto-generated.
@@ -426,7 +426,7 @@ func TriggerErrInvalidID(mm ...*triggerActionProps) *errors.Error {
 		p.Format("invalid ID", nil),
 
 		errors.Meta("type", "invalidID"),
-		errors.Meta("resource", "system:trigger"),
+		errors.Meta("resource", "automation:trigger"),
 
 		errors.Meta(triggerPropsMetaKey{}, p),
 
@@ -439,7 +439,7 @@ func TriggerErrInvalidID(mm ...*triggerActionProps) *errors.Error {
 	return e
 }
 
-// TriggerErrStaleData returns "system:trigger.staleData" as *errors.Error
+// TriggerErrStaleData returns "automation:trigger.staleData" as *errors.Error
 //
 //
 // This function is auto-generated.
@@ -456,7 +456,7 @@ func TriggerErrStaleData(mm ...*triggerActionProps) *errors.Error {
 		p.Format("stale data", nil),
 
 		errors.Meta("type", "staleData"),
-		errors.Meta("resource", "system:trigger"),
+		errors.Meta("resource", "automation:trigger"),
 
 		errors.Meta(triggerPropsMetaKey{}, p),
 
@@ -469,7 +469,7 @@ func TriggerErrStaleData(mm ...*triggerActionProps) *errors.Error {
 	return e
 }
 
-// TriggerErrNotAllowedToRead returns "system:trigger.notAllowedToRead" as *errors.Error
+// TriggerErrNotAllowedToRead returns "automation:trigger.notAllowedToRead" as *errors.Error
 //
 //
 // This function is auto-generated.
@@ -486,7 +486,7 @@ func TriggerErrNotAllowedToRead(mm ...*triggerActionProps) *errors.Error {
 		p.Format("not allowed to read this trigger", nil),
 
 		errors.Meta("type", "notAllowedToRead"),
-		errors.Meta("resource", "system:trigger"),
+		errors.Meta("resource", "automation:trigger"),
 
 		// action log entry; no formatting, it will be applied inside recordAction fn.
 		errors.Meta(triggerLogMetaKey{}, "failed to read {trigger.ID}; insufficient permissions"),
@@ -501,7 +501,7 @@ func TriggerErrNotAllowedToRead(mm ...*triggerActionProps) *errors.Error {
 	return e
 }
 
-// TriggerErrNotAllowedToSearch returns "system:trigger.notAllowedToSearch" as *errors.Error
+// TriggerErrNotAllowedToSearch returns "automation:trigger.notAllowedToSearch" as *errors.Error
 //
 //
 // This function is auto-generated.
@@ -518,7 +518,7 @@ func TriggerErrNotAllowedToSearch(mm ...*triggerActionProps) *errors.Error {
 		p.Format("not allowed to search triggers", nil),
 
 		errors.Meta("type", "notAllowedToSearch"),
-		errors.Meta("resource", "system:trigger"),
+		errors.Meta("resource", "automation:trigger"),
 
 		// action log entry; no formatting, it will be applied inside recordAction fn.
 		errors.Meta(triggerLogMetaKey{}, "failed to list trigger; insufficient permissions"),
@@ -533,7 +533,7 @@ func TriggerErrNotAllowedToSearch(mm ...*triggerActionProps) *errors.Error {
 	return e
 }
 
-// TriggerErrNotAllowedToCreate returns "system:trigger.notAllowedToCreate" as *errors.Error
+// TriggerErrNotAllowedToCreate returns "automation:trigger.notAllowedToCreate" as *errors.Error
 //
 //
 // This function is auto-generated.
@@ -550,7 +550,7 @@ func TriggerErrNotAllowedToCreate(mm ...*triggerActionProps) *errors.Error {
 		p.Format("not allowed to create triggers", nil),
 
 		errors.Meta("type", "notAllowedToCreate"),
-		errors.Meta("resource", "system:trigger"),
+		errors.Meta("resource", "automation:trigger"),
 
 		// action log entry; no formatting, it will be applied inside recordAction fn.
 		errors.Meta(triggerLogMetaKey{}, "failed to create trigger; insufficient permissions"),
@@ -565,7 +565,7 @@ func TriggerErrNotAllowedToCreate(mm ...*triggerActionProps) *errors.Error {
 	return e
 }
 
-// TriggerErrNotAllowedToUpdate returns "system:trigger.notAllowedToUpdate" as *errors.Error
+// TriggerErrNotAllowedToUpdate returns "automation:trigger.notAllowedToUpdate" as *errors.Error
 //
 //
 // This function is auto-generated.
@@ -582,7 +582,7 @@ func TriggerErrNotAllowedToUpdate(mm ...*triggerActionProps) *errors.Error {
 		p.Format("not allowed to update this trigger", nil),
 
 		errors.Meta("type", "notAllowedToUpdate"),
-		errors.Meta("resource", "system:trigger"),
+		errors.Meta("resource", "automation:trigger"),
 
 		// action log entry; no formatting, it will be applied inside recordAction fn.
 		errors.Meta(triggerLogMetaKey{}, "failed to update {trigger.ID}; insufficient permissions"),
@@ -597,7 +597,7 @@ func TriggerErrNotAllowedToUpdate(mm ...*triggerActionProps) *errors.Error {
 	return e
 }
 
-// TriggerErrNotAllowedToDelete returns "system:trigger.notAllowedToDelete" as *errors.Error
+// TriggerErrNotAllowedToDelete returns "automation:trigger.notAllowedToDelete" as *errors.Error
 //
 //
 // This function is auto-generated.
@@ -614,7 +614,7 @@ func TriggerErrNotAllowedToDelete(mm ...*triggerActionProps) *errors.Error {
 		p.Format("not allowed to delete this trigger", nil),
 
 		errors.Meta("type", "notAllowedToDelete"),
-		errors.Meta("resource", "system:trigger"),
+		errors.Meta("resource", "automation:trigger"),
 
 		// action log entry; no formatting, it will be applied inside recordAction fn.
 		errors.Meta(triggerLogMetaKey{}, "failed to delete {trigger.ID}; insufficient permissions"),
@@ -629,7 +629,7 @@ func TriggerErrNotAllowedToDelete(mm ...*triggerActionProps) *errors.Error {
 	return e
 }
 
-// TriggerErrNotAllowedToUndelete returns "system:trigger.notAllowedToUndelete" as *errors.Error
+// TriggerErrNotAllowedToUndelete returns "automation:trigger.notAllowedToUndelete" as *errors.Error
 //
 //
 // This function is auto-generated.
@@ -646,7 +646,7 @@ func TriggerErrNotAllowedToUndelete(mm ...*triggerActionProps) *errors.Error {
 		p.Format("not allowed to undelete this trigger", nil),
 
 		errors.Meta("type", "notAllowedToUndelete"),
-		errors.Meta("resource", "system:trigger"),
+		errors.Meta("resource", "automation:trigger"),
 
 		// action log entry; no formatting, it will be applied inside recordAction fn.
 		errors.Meta(triggerLogMetaKey{}, "failed to undelete {trigger.ID}; insufficient permissions"),

@@ -232,14 +232,14 @@ func (e *workflowAction) ToAction() *actionlog.Action {
 // *********************************************************************************************************************
 // Action constructors
 
-// WorkflowActionSearch returns "system:workflow.search" action
+// WorkflowActionSearch returns "automation:workflow.search" action
 //
 // This function is auto-generated.
 //
 func WorkflowActionSearch(props ...*workflowActionProps) *workflowAction {
 	a := &workflowAction{
 		timestamp: time.Now(),
-		resource:  "system:workflow",
+		resource:  "automation:workflow",
 		action:    "search",
 		log:       "searched for matching workflows",
 		severity:  actionlog.Info,
@@ -252,14 +252,14 @@ func WorkflowActionSearch(props ...*workflowActionProps) *workflowAction {
 	return a
 }
 
-// WorkflowActionLookup returns "system:workflow.lookup" action
+// WorkflowActionLookup returns "automation:workflow.lookup" action
 //
 // This function is auto-generated.
 //
 func WorkflowActionLookup(props ...*workflowActionProps) *workflowAction {
 	a := &workflowAction{
 		timestamp: time.Now(),
-		resource:  "system:workflow",
+		resource:  "automation:workflow",
 		action:    "lookup",
 		log:       "looked-up for a {workflow}",
 		severity:  actionlog.Info,
@@ -272,14 +272,14 @@ func WorkflowActionLookup(props ...*workflowActionProps) *workflowAction {
 	return a
 }
 
-// WorkflowActionCreate returns "system:workflow.create" action
+// WorkflowActionCreate returns "automation:workflow.create" action
 //
 // This function is auto-generated.
 //
 func WorkflowActionCreate(props ...*workflowActionProps) *workflowAction {
 	a := &workflowAction{
 		timestamp: time.Now(),
-		resource:  "system:workflow",
+		resource:  "automation:workflow",
 		action:    "create",
 		log:       "created {workflow}",
 		severity:  actionlog.Info,
@@ -292,14 +292,14 @@ func WorkflowActionCreate(props ...*workflowActionProps) *workflowAction {
 	return a
 }
 
-// WorkflowActionUpdate returns "system:workflow.update" action
+// WorkflowActionUpdate returns "automation:workflow.update" action
 //
 // This function is auto-generated.
 //
 func WorkflowActionUpdate(props ...*workflowActionProps) *workflowAction {
 	a := &workflowAction{
 		timestamp: time.Now(),
-		resource:  "system:workflow",
+		resource:  "automation:workflow",
 		action:    "update",
 		log:       "updated {workflow}",
 		severity:  actionlog.Info,
@@ -312,14 +312,14 @@ func WorkflowActionUpdate(props ...*workflowActionProps) *workflowAction {
 	return a
 }
 
-// WorkflowActionDelete returns "system:workflow.delete" action
+// WorkflowActionDelete returns "automation:workflow.delete" action
 //
 // This function is auto-generated.
 //
 func WorkflowActionDelete(props ...*workflowActionProps) *workflowAction {
 	a := &workflowAction{
 		timestamp: time.Now(),
-		resource:  "system:workflow",
+		resource:  "automation:workflow",
 		action:    "delete",
 		log:       "deleted {workflow}",
 		severity:  actionlog.Info,
@@ -332,14 +332,14 @@ func WorkflowActionDelete(props ...*workflowActionProps) *workflowAction {
 	return a
 }
 
-// WorkflowActionUndelete returns "system:workflow.undelete" action
+// WorkflowActionUndelete returns "automation:workflow.undelete" action
 //
 // This function is auto-generated.
 //
 func WorkflowActionUndelete(props ...*workflowActionProps) *workflowAction {
 	a := &workflowAction{
 		timestamp: time.Now(),
-		resource:  "system:workflow",
+		resource:  "automation:workflow",
 		action:    "undelete",
 		log:       "undeleted {workflow}",
 		severity:  actionlog.Info,
@@ -356,7 +356,7 @@ func WorkflowActionUndelete(props ...*workflowActionProps) *workflowAction {
 // *********************************************************************************************************************
 // Error constructors
 
-// WorkflowErrGeneric returns "system:workflow.generic" as *errors.Error
+// WorkflowErrGeneric returns "automation:workflow.generic" as *errors.Error
 //
 //
 // This function is auto-generated.
@@ -373,7 +373,7 @@ func WorkflowErrGeneric(mm ...*workflowActionProps) *errors.Error {
 		p.Format("failed to complete request due to internal error", nil),
 
 		errors.Meta("type", "generic"),
-		errors.Meta("resource", "system:workflow"),
+		errors.Meta("resource", "automation:workflow"),
 
 		// action log entry; no formatting, it will be applied inside recordAction fn.
 		errors.Meta(workflowLogMetaKey{}, "{err}"),
@@ -388,7 +388,7 @@ func WorkflowErrGeneric(mm ...*workflowActionProps) *errors.Error {
 	return e
 }
 
-// WorkflowErrNotFound returns "system:workflow.notFound" as *errors.Error
+// WorkflowErrNotFound returns "automation:workflow.notFound" as *errors.Error
 //
 //
 // This function is auto-generated.
@@ -405,7 +405,7 @@ func WorkflowErrNotFound(mm ...*workflowActionProps) *errors.Error {
 		p.Format("workflow not found", nil),
 
 		errors.Meta("type", "notFound"),
-		errors.Meta("resource", "system:workflow"),
+		errors.Meta("resource", "automation:workflow"),
 
 		errors.Meta(workflowPropsMetaKey{}, p),
 
@@ -418,7 +418,7 @@ func WorkflowErrNotFound(mm ...*workflowActionProps) *errors.Error {
 	return e
 }
 
-// WorkflowErrInvalidID returns "system:workflow.invalidID" as *errors.Error
+// WorkflowErrInvalidID returns "automation:workflow.invalidID" as *errors.Error
 //
 //
 // This function is auto-generated.
@@ -435,7 +435,7 @@ func WorkflowErrInvalidID(mm ...*workflowActionProps) *errors.Error {
 		p.Format("invalid ID", nil),
 
 		errors.Meta("type", "invalidID"),
-		errors.Meta("resource", "system:workflow"),
+		errors.Meta("resource", "automation:workflow"),
 
 		errors.Meta(workflowPropsMetaKey{}, p),
 
@@ -448,7 +448,7 @@ func WorkflowErrInvalidID(mm ...*workflowActionProps) *errors.Error {
 	return e
 }
 
-// WorkflowErrInvalidHandle returns "system:workflow.invalidHandle" as *errors.Error
+// WorkflowErrInvalidHandle returns "automation:workflow.invalidHandle" as *errors.Error
 //
 //
 // This function is auto-generated.
@@ -465,7 +465,7 @@ func WorkflowErrInvalidHandle(mm ...*workflowActionProps) *errors.Error {
 		p.Format("invalid handle", nil),
 
 		errors.Meta("type", "invalidHandle"),
-		errors.Meta("resource", "system:workflow"),
+		errors.Meta("resource", "automation:workflow"),
 
 		errors.Meta(workflowPropsMetaKey{}, p),
 
@@ -478,7 +478,7 @@ func WorkflowErrInvalidHandle(mm ...*workflowActionProps) *errors.Error {
 	return e
 }
 
-// WorkflowErrStaleData returns "system:workflow.staleData" as *errors.Error
+// WorkflowErrStaleData returns "automation:workflow.staleData" as *errors.Error
 //
 //
 // This function is auto-generated.
@@ -495,7 +495,7 @@ func WorkflowErrStaleData(mm ...*workflowActionProps) *errors.Error {
 		p.Format("stale data", nil),
 
 		errors.Meta("type", "staleData"),
-		errors.Meta("resource", "system:workflow"),
+		errors.Meta("resource", "automation:workflow"),
 
 		errors.Meta(workflowPropsMetaKey{}, p),
 
@@ -508,7 +508,7 @@ func WorkflowErrStaleData(mm ...*workflowActionProps) *errors.Error {
 	return e
 }
 
-// WorkflowErrNotAllowedToRead returns "system:workflow.notAllowedToRead" as *errors.Error
+// WorkflowErrNotAllowedToRead returns "automation:workflow.notAllowedToRead" as *errors.Error
 //
 //
 // This function is auto-generated.
@@ -525,7 +525,7 @@ func WorkflowErrNotAllowedToRead(mm ...*workflowActionProps) *errors.Error {
 		p.Format("not allowed to read this workflow", nil),
 
 		errors.Meta("type", "notAllowedToRead"),
-		errors.Meta("resource", "system:workflow"),
+		errors.Meta("resource", "automation:workflow"),
 
 		// action log entry; no formatting, it will be applied inside recordAction fn.
 		errors.Meta(workflowLogMetaKey{}, "failed to read {workflow.handle}; insufficient permissions"),
@@ -540,7 +540,7 @@ func WorkflowErrNotAllowedToRead(mm ...*workflowActionProps) *errors.Error {
 	return e
 }
 
-// WorkflowErrNotAllowedToSearch returns "system:workflow.notAllowedToSearch" as *errors.Error
+// WorkflowErrNotAllowedToSearch returns "automation:workflow.notAllowedToSearch" as *errors.Error
 //
 //
 // This function is auto-generated.
@@ -557,7 +557,7 @@ func WorkflowErrNotAllowedToSearch(mm ...*workflowActionProps) *errors.Error {
 		p.Format("not allowed to search workflows", nil),
 
 		errors.Meta("type", "notAllowedToSearch"),
-		errors.Meta("resource", "system:workflow"),
+		errors.Meta("resource", "automation:workflow"),
 
 		// action log entry; no formatting, it will be applied inside recordAction fn.
 		errors.Meta(workflowLogMetaKey{}, "failed to list workflow; insufficient permissions"),
@@ -572,7 +572,7 @@ func WorkflowErrNotAllowedToSearch(mm ...*workflowActionProps) *errors.Error {
 	return e
 }
 
-// WorkflowErrNotAllowedToCreate returns "system:workflow.notAllowedToCreate" as *errors.Error
+// WorkflowErrNotAllowedToCreate returns "automation:workflow.notAllowedToCreate" as *errors.Error
 //
 //
 // This function is auto-generated.
@@ -589,7 +589,7 @@ func WorkflowErrNotAllowedToCreate(mm ...*workflowActionProps) *errors.Error {
 		p.Format("not allowed to create workflows", nil),
 
 		errors.Meta("type", "notAllowedToCreate"),
-		errors.Meta("resource", "system:workflow"),
+		errors.Meta("resource", "automation:workflow"),
 
 		// action log entry; no formatting, it will be applied inside recordAction fn.
 		errors.Meta(workflowLogMetaKey{}, "failed to create workflow; insufficient permissions"),
@@ -604,7 +604,7 @@ func WorkflowErrNotAllowedToCreate(mm ...*workflowActionProps) *errors.Error {
 	return e
 }
 
-// WorkflowErrNotAllowedToUpdate returns "system:workflow.notAllowedToUpdate" as *errors.Error
+// WorkflowErrNotAllowedToUpdate returns "automation:workflow.notAllowedToUpdate" as *errors.Error
 //
 //
 // This function is auto-generated.
@@ -621,7 +621,7 @@ func WorkflowErrNotAllowedToUpdate(mm ...*workflowActionProps) *errors.Error {
 		p.Format("not allowed to update this workflow", nil),
 
 		errors.Meta("type", "notAllowedToUpdate"),
-		errors.Meta("resource", "system:workflow"),
+		errors.Meta("resource", "automation:workflow"),
 
 		// action log entry; no formatting, it will be applied inside recordAction fn.
 		errors.Meta(workflowLogMetaKey{}, "failed to update {workflow}; insufficient permissions"),
@@ -636,7 +636,7 @@ func WorkflowErrNotAllowedToUpdate(mm ...*workflowActionProps) *errors.Error {
 	return e
 }
 
-// WorkflowErrNotAllowedToDelete returns "system:workflow.notAllowedToDelete" as *errors.Error
+// WorkflowErrNotAllowedToDelete returns "automation:workflow.notAllowedToDelete" as *errors.Error
 //
 //
 // This function is auto-generated.
@@ -653,7 +653,7 @@ func WorkflowErrNotAllowedToDelete(mm ...*workflowActionProps) *errors.Error {
 		p.Format("not allowed to delete this workflow", nil),
 
 		errors.Meta("type", "notAllowedToDelete"),
-		errors.Meta("resource", "system:workflow"),
+		errors.Meta("resource", "automation:workflow"),
 
 		// action log entry; no formatting, it will be applied inside recordAction fn.
 		errors.Meta(workflowLogMetaKey{}, "failed to delete {workflow}; insufficient permissions"),
@@ -668,7 +668,7 @@ func WorkflowErrNotAllowedToDelete(mm ...*workflowActionProps) *errors.Error {
 	return e
 }
 
-// WorkflowErrNotAllowedToUndelete returns "system:workflow.notAllowedToUndelete" as *errors.Error
+// WorkflowErrNotAllowedToUndelete returns "automation:workflow.notAllowedToUndelete" as *errors.Error
 //
 //
 // This function is auto-generated.
@@ -685,7 +685,7 @@ func WorkflowErrNotAllowedToUndelete(mm ...*workflowActionProps) *errors.Error {
 		p.Format("not allowed to undelete this workflow", nil),
 
 		errors.Meta("type", "notAllowedToUndelete"),
-		errors.Meta("resource", "system:workflow"),
+		errors.Meta("resource", "automation:workflow"),
 
 		// action log entry; no formatting, it will be applied inside recordAction fn.
 		errors.Meta(workflowLogMetaKey{}, "failed to undelete {workflow}; insufficient permissions"),
@@ -700,7 +700,7 @@ func WorkflowErrNotAllowedToUndelete(mm ...*workflowActionProps) *errors.Error {
 	return e
 }
 
-// WorkflowErrHandleNotUnique returns "system:workflow.handleNotUnique" as *errors.Error
+// WorkflowErrHandleNotUnique returns "automation:workflow.handleNotUnique" as *errors.Error
 //
 //
 // This function is auto-generated.
@@ -717,7 +717,7 @@ func WorkflowErrHandleNotUnique(mm ...*workflowActionProps) *errors.Error {
 		p.Format("workflow handle not unique", nil),
 
 		errors.Meta("type", "handleNotUnique"),
-		errors.Meta("resource", "system:workflow"),
+		errors.Meta("resource", "automation:workflow"),
 
 		// action log entry; no formatting, it will be applied inside recordAction fn.
 		errors.Meta(workflowLogMetaKey{}, "duplicate handle used for workflow ({workflow})"),
