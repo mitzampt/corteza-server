@@ -1,6 +1,6 @@
 # List of loggable service actions
 
-resource: system:workflow
+resource: automation:workflow
 service: workflow
 
 import:

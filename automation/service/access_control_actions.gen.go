@@ -155,14 +155,14 @@ func (e *accessControlAction) ToAction() *actionlog.Action {
 // *********************************************************************************************************************
 // Action constructors
 
-// AccessControlActionGrant returns "system:access_control.grant" action
+// AccessControlActionGrant returns "automation:access_control.grant" action
 //
 // This function is auto-generated.
 //
 func AccessControlActionGrant(props ...*accessControlActionProps) *accessControlAction {
 	a := &accessControlAction{
 		timestamp: time.Now(),
-		resource:  "system:access_control",
+		resource:  "automation:access_control",
 		action:    "grant",
 		log:       "grant",
 		severity:  actionlog.Notice,
@@ -179,7 +179,7 @@ func AccessControlActionGrant(props ...*accessControlActionProps) *accessControl
 // *********************************************************************************************************************
 // Error constructors
 
-// AccessControlErrGeneric returns "system:access_control.generic" as *errors.Error
+// AccessControlErrGeneric returns "automation:access_control.generic" as *errors.Error
 //
 //
 // This function is auto-generated.
@@ -196,7 +196,7 @@ func AccessControlErrGeneric(mm ...*accessControlActionProps) *errors.Error {
 		p.Format("failed to complete request due to internal error", nil),
 
 		errors.Meta("type", "generic"),
-		errors.Meta("resource", "system:access_control"),
+		errors.Meta("resource", "automation:access_control"),
 
 		// action log entry; no formatting, it will be applied inside recordAction fn.
 		errors.Meta(accessControlLogMetaKey{}, "{err}"),
@@ -211,7 +211,7 @@ func AccessControlErrGeneric(mm ...*accessControlActionProps) *errors.Error {
 	return e
 }
 
-// AccessControlErrNotAllowedToSetPermissions returns "system:access_control.notAllowedToSetPermissions" as *errors.Error
+// AccessControlErrNotAllowedToSetPermissions returns "automation:access_control.notAllowedToSetPermissions" as *errors.Error
 //
 //
 // This function is auto-generated.
@@ -228,7 +228,7 @@ func AccessControlErrNotAllowedToSetPermissions(mm ...*accessControlActionProps)
 		p.Format("not allowed to set permissions", nil),
 
 		errors.Meta("type", "notAllowedToSetPermissions"),
-		errors.Meta("resource", "system:access_control"),
+		errors.Meta("resource", "automation:access_control"),
 
 		errors.Meta(accessControlPropsMetaKey{}, p),
 

@@ -1,6 +1,6 @@
 # List of loggable service actions
 
-resource: system:trigger
+resource: automation:trigger
 service: trigger
 
 import:

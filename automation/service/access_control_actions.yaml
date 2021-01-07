@@ -1,6 +1,6 @@
 # List of security/audit events and errors that we need to log
 
-resource: system:access_control
+resource: automation:access_control
 service: accessControl
 
 # Default sensitivity for actions
