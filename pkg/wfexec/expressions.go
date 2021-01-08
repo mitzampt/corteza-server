@@ -44,6 +44,27 @@ func NewExpressions(lang gval.Language, ee ...*Expression) *Expressions {
 	}
 }
 
+// Checks if any of the expressions has
+func (ee *Expressions) Has(dst string) bool {
+	for i := range ee.set {
+		if ee.set[i].name == dst {
+			return true
+		}
+	}
+
+	return false
+}
+
+// Checks if any of the expressions has
+func (ee *Expressions) Names() []string {
+	var oo = make([]string, len(ee.set))
+	for i := range ee.set {
+		oo[i] = ee.set[i].name
+	}
+
+	return oo
+}
+
 func (ee *Expressions) Set(dst, expr string) error {
 	var (
 		e, err = NewExpression(ee.lang, dst, expr)

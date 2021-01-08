@@ -76,12 +76,16 @@ type (
 		// reference to function or subprocess (workflow)
 		Ref string `json:"ref"`
 
+		// set of tests to check the current scope
+		// valid only for kind=prompt
+		Tests []*WorkflowTestExpression `json:"tests"`
+
 		// set of expressions to evaluate or pass to function
 		// invalid for for kind=~gateway:*
-		Arguments []*WorkflowExpression `json:"arguments,string"`
+		Arguments []*WorkflowExpression `json:"arguments"`
 
 		// only valid when kind=function
-		Results []*WorkflowExpression `json:"results,string"`
+		Results []*WorkflowExpression `json:"results"`
 
 		Meta WorkflowStepMeta `json:"meta"`
 	}

@@ -655,14 +655,16 @@ func (svc *workflow) workflowActivityDefConv(s *types.WorkflowStep) (wfexec.Step
 			aa, rr *wfexec.Expressions
 		)
 
-		// @todo make sure s.Arguments fit into fn.Parameters
-
 		if aa, err = svc.workflowExprDefConv(s.Arguments...); err != nil {
-			return nil, errors.Internal("failed to convert function arguments: %s", err).Wrap(err)
+			return nil, errors.Internal("failed to convert argument for function %s: %s", s.Ref, err).Wrap(err)
+		} else if err = fn.Parameters.CheckInput(aa); err != nil {
+			return nil, errors.Internal("failed to convert argument for function %s: %s", s.Ref, err).Wrap(err)
 		}
 
 		if rr, err = svc.workflowExprDefConv(s.Results...); err != nil {
-			return nil, errors.Internal("failed to convert function arguments: %s", err).Wrap(err)
+			return nil, errors.Internal("failed to convert result for function %s: %s", s.Ref, err).Wrap(err)
+		} else if err = fn.Parameters.CheckInput(aa); err != nil {
+			return nil, errors.Internal("failed to convert result for function %s: %s", s.Ref, err).Wrap(err)
 		}
 
 		return wfexec.Activity(fn.Handler, aa, rr), nil

@@ -7,8 +7,8 @@ type (
 	Function struct {
 		Ref        string        `json:"ref,omitempty"`
 		Meta       *FunctionMeta `json:"meta,omitempty"`
-		Parameters []*Param      `json:"parameters,omitempty"`
-		Results    []*Param      `json:"results,omitempty"`
+		Parameters ParamSet      `json:"parameters,omitempty"`
+		Results    ParamSet      `json:"results,omitempty"`
 
 		Handler wfexec.ActivityHandler `json:"-"`
 	}

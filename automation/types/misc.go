@@ -9,9 +9,14 @@ import (
 type (
 	// Used for expression steps, arguments/results mapping and for input validation
 	WorkflowExpression struct {
+		Name string `json:"name,omitempty"`
+		Expr string `json:"expr"`
+	}
+
+	WorkflowTestExpression struct {
 		Name  string `json:"name,omitempty"`
-		Expr  string `json:"expr"`
-		Error string `json:"error,omitempty"`
+		Test  string `json:"expr"`
+		Error string `json:"error"`
 	}
 
 	// Variables uses same structure as wfexec.Variables

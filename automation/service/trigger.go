@@ -185,7 +185,7 @@ func (svc *trigger) Create(ctx context.Context, new *types.Trigger) (res *types.
 			return
 		}
 
-		if err = svc.registerWorkflow(wf, res); err != nil {
+		if err = svc.registerWorkflow(ctx, wf, res); err != nil {
 			return
 		}
 
@@ -381,7 +381,7 @@ func (svc *trigger) registerWorkflows(ctx context.Context, workflows ...*types.W
 	for _, wf := range workflows {
 		svc.unregisterWorkflows(wf)
 
-		if err = svc.registerWorkflow(wf, tt.FilterByWorkflowID(wf.ID)...); err != nil {
+		if err = svc.registerWorkflow(ctx, wf, tt.FilterByWorkflowID(wf.ID)...); err != nil {
 			return err
 		}
 	}
@@ -398,11 +398,11 @@ func (svc *trigger) updateTriggerRegistration(ctx context.Context, t *types.Trig
 		return err
 	}
 
-	return svc.registerWorkflow(wf, t)
+	return svc.registerWorkflow(ctx, wf, t)
 }
 
 // registers one workflow and a set of triggers
-func (svc *trigger) registerWorkflow(wf *types.Workflow, tt ...*types.Trigger) (err error) {
+func (svc *trigger) registerWorkflow(ctx context.Context, wf *types.Workflow, tt ...*types.Trigger) (err error) {
 	var (
 		runAs auth.Identifiable
 	)
@@ -412,7 +412,7 @@ func (svc *trigger) registerWorkflow(wf *types.Workflow, tt ...*types.Trigger) (
 	}
 
 	if wf.RunAs > 0 {
-		if runAs, err = DefaultUser.FindByID(wf.RunAs); err != nil {
+		if runAs, err = DefaultUser.FindByID(ctx, wf.RunAs); err != nil {
 			return fmt.Errorf("failed to load run-as user %d: %w", wf.RunAs, err)
 		} else if !runAs.Valid() {
 			return fmt.Errorf("invalid user %d used for workflow run-as", wf.RunAs)
