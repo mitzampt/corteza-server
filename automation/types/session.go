@@ -5,6 +5,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
+	"github.com/cortezaproject/corteza-server/pkg/expr"
 	"github.com/cortezaproject/corteza-server/pkg/filter"
 	"github.com/cortezaproject/corteza-server/pkg/wfexec"
 	"time"
@@ -21,8 +22,8 @@ type (
 		EventType    string `json:"eventType"`
 		ResourceType string `json:"resourceType"`
 
-		Input  Variables `json:"input"`
-		Output Variables `json:"output"`
+		Input  expr.Variables `json:"input"`
+		Output expr.Variables `json:"output"`
 
 		Stacktrace Stacktrace `json:"stacktrace"`
 
@@ -40,7 +41,7 @@ type (
 		WorkflowID   uint64
 		KeepFor      int
 		Trace        bool
-		Input        Variables
+		Input        expr.Variables
 		StepID       uint64
 		EventType    string
 		ResourceType string
@@ -85,12 +86,12 @@ func NewSession(s *wfexec.Session) *Session {
 	}
 }
 
-func (s Session) Exec(ctx context.Context, step wfexec.Step, input Variables) error {
-	return s.session.Exec(ctx, step, wfexec.Variables(input))
+func (s Session) Exec(ctx context.Context, step wfexec.Step, input expr.Variables) error {
+	return s.session.Exec(ctx, step, expr.Variables(input))
 }
 
-func (s Session) Resume(ctx context.Context, stateID uint64, input Variables) error {
-	return s.session.Resume(ctx, stateID, wfexec.Variables(input))
+func (s Session) Resume(ctx context.Context, stateID uint64, input expr.Variables) error {
+	return s.session.Resume(ctx, stateID, expr.Variables(input))
 }
 
 func (s *Session) Apply(ssp SessionStartParams) {

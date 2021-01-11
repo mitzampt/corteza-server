@@ -3,7 +3,7 @@ package wfexec
 import (
 	"context"
 	"fmt"
-	"github.com/PaesslerAG/gval"
+	"github.com/cortezaproject/corteza-server/pkg/expr"
 	"sync"
 )
 
@@ -14,22 +14,16 @@ import (
 type (
 	GatewayPaths []*GatewayPath
 	GatewayPath  struct {
-		eval gval.Evaluable
+		test pathTester
 		to   Step
 	}
+
+	pathTester func(context.Context, expr.Variables) (bool, error)
 )
 
 // NewGatewayPath validates Expression and returns initialized GatewayPath
-func NewGatewayPath(lang gval.Language, s Step, expr string) (gwp *GatewayPath, err error) {
-	gwp = &GatewayPath{to: s}
-
-	if len(expr) > 0 {
-		if gwp.eval, err = lang.NewEvaluable(expr); err != nil {
-			return nil, fmt.Errorf("can not parse gateway test Expression %s: %w", expr, err)
-		}
-	}
-
-	return
+func NewGatewayPath(s Step, t pathTester) (gwp *GatewayPath, err error) {
+	return &GatewayPath{to: s, test: t}, nil
 }
 
 // joinGateway handles merging/joining of multiple paths into
@@ -37,7 +31,7 @@ func NewGatewayPath(lang gval.Language, s Step, expr string) (gwp *GatewayPath, 
 type joinGateway struct {
 	stepIdentifier
 	paths  Steps
-	scopes map[Step]Variables
+	scopes map[Step]expr.Variables
 	l      sync.Mutex
 }
 
@@ -45,13 +39,13 @@ type joinGateway struct {
 func JoinGateway(ss ...Step) *joinGateway {
 	return &joinGateway{
 		paths:  ss,
-		scopes: make(map[Step]Variables),
+		scopes: make(map[Step]expr.Variables),
 	}
 }
 
 // Exec fn on join gateway can be called multiple times, even multiple times parent the same parent
 //
-// Func will override the collected parent's Variables.
+// Func will override the collected parent's expr.Variables.
 //
 // Join gateways is ready to continue with the Graph when all configured paths are ready to be partial
 // When all paths are merged (ie Exec was called at least once per parent)
@@ -69,7 +63,7 @@ func (gw *joinGateway) Exec(_ context.Context, r *ExecRequest) (ExecResponse, er
 	}
 
 	// All collected, merge scope parent all paths in the defined order
-	var merged = Variables{}
+	var merged = expr.Variables{}
 	for _, p := range gw.paths {
 		merged = merged.Merge(gw.scopes[p])
 	}
@@ -108,7 +102,7 @@ func InclGateway(pp ...*GatewayPath) (*inclGateway, error) {
 	}
 
 	for _, p := range pp {
-		if p.eval == nil {
+		if p.test == nil {
 			return nil, fmt.Errorf("all inclusve gateway paths must have valid test Expression")
 		}
 	}
@@ -123,7 +117,7 @@ func (gw inclGateway) Exec(ctx context.Context, r *ExecRequest) (ExecResponse, e
 
 	var paths Steps
 	for _, p := range gw.paths {
-		if result, err := p.eval.EvalBool(ctx, r.Scope); err != nil {
+		if result, err := p.test(ctx, r.Scope); err != nil {
 			return nil, err
 		} else if result {
 			paths = append(paths, p.to)
@@ -151,7 +145,7 @@ func ExclGateway(pp ...*GatewayPath) (*exclGateway, error) {
 	}
 
 	for i, p := range pp {
-		if p.eval == nil && i != t-1 {
+		if p.test == nil && i != t-1 {
 			return nil, fmt.Errorf("all exclusive gateway paths must have valid test Expression")
 		}
 	}
@@ -164,12 +158,12 @@ func ExclGateway(pp ...*GatewayPath) (*exclGateway, error) {
 // Exactly one matched path can be returned.
 func (gw exclGateway) Exec(ctx context.Context, r *ExecRequest) (ExecResponse, error) {
 	for _, p := range gw.paths {
-		if p.eval == nil {
+		if p.test == nil {
 			// empty & last; treat it as else part of the if condition
 			return p.to, nil
 		}
 
-		if result, err := p.eval.EvalBool(ctx, r.Scope); err != nil {
+		if result, err := p.test(ctx, r.Scope); err != nil {
 			return nil, err
 		} else if result {
 			return p.to, nil

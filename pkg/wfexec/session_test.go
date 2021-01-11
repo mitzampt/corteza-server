@@ -33,7 +33,7 @@ func (s *sesTestStep) Exec(ctx context.Context, r *ExecRequest) (ExecResponse, e
 		return s.exec(ctx, r)
 	}
 
-	return Variables{
+	return expr.Variables{
 		"counter": r.Scope.Int("counter", 0) + 1,
 		"path":    r.Scope.String("path", "") + "/" + s.name,
 		s.name:    "executed",
@@ -49,7 +49,7 @@ func (s *sesTestTemporal) Exec(ctx context.Context, r *ExecRequest) (ExecRespons
 		return DelayExecution(s.until), nil
 	}
 
-	return Variables{
+	return expr.Variables{
 		"waitForMoment": "executed",
 	}, nil
 }
@@ -66,7 +66,7 @@ func TestSession_TwoStepWorkflow(t *testing.T) {
 	)
 
 	wf.AddStep(s1, s2) // 1st execute s1 then s2
-	ses.Exec(ctx, s1, Variables{"two": 1, "three": 1})
+	ses.Exec(ctx, s1, expr.Variables{"two": 1, "three": 1})
 	ses.Wait(ctx)
 	req.NoError(ses.Error())
 	req.NotNil(ses.Result())
@@ -130,7 +130,7 @@ func TestSession_Delays(t *testing.T) {
 				return WaitForInput(), nil
 			}
 
-			return Variables{
+			return expr.Variables{
 				"input":        r.Input["input"],
 				"waitForInput": "executed",
 			}, nil
@@ -157,7 +157,7 @@ func TestSession_Delays(t *testing.T) {
 	req.True(ses.Suspended())
 
 	// push in the input
-	req.NoError(ses.Resume(ctx, waitForInputStateId.Load(), Variables{"input": "foo"}))
+	req.NoError(ses.Resume(ctx, waitForInputStateId.Load(), expr.Variables{"input": "foo"}))
 
 	req.False(ses.Suspended())
 	ses.Wait(ctx)
@@ -170,23 +170,4 @@ func TestSession_Delays(t *testing.T) {
 	req.Contains(ses.Result(), "waitForMoment")
 	req.Contains(ses.Result(), "waitForInput")
 	req.Equal("foo", ses.Result().String("input", ""))
-}
-
-func TestSession_Messages(t *testing.T) {
-	var (
-		ctx = context.Background()
-		req = require.New(t)
-		wf  = NewGraph()
-		ses = NewSession(ctx, wf)
-
-		bodyExpr, _ = NewExpression(expr.Parser(), "", "message")
-		msg1        = NewMessageEmitter("alert", bodyExpr)
-	)
-
-	//ses.log = logger.MakeDebugLogger().Sugar()
-
-	wf.AddStep(msg1)
-	req.NoError(ses.Exec(ctx, msg1, Variables{"message": "foo"}))
-	ses.Wait(ctx)
-	req.Len(ses.messages, 1)
 }

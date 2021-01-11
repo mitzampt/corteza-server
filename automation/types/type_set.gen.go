@@ -35,11 +35,6 @@ type (
 	// This type is auto-generated.
 	WorkflowSet []*Workflow
 
-	// WorkflowExpressionSet slice of WorkflowExpression
-	//
-	// This type is auto-generated.
-	WorkflowExpressionSet []*WorkflowExpression
-
 	// WorkflowPathSet slice of WorkflowPath
 	//
 	// This type is auto-generated.
@@ -300,36 +295,6 @@ func (set WorkflowSet) IDs() (IDs []uint64) {
 
 	for i := range set {
 		IDs[i] = set[i].ID
-	}
-
-	return
-}
-
-// Walk iterates through every slice item and calls w(WorkflowExpression) err
-//
-// This function is auto-generated.
-func (set WorkflowExpressionSet) Walk(w func(*WorkflowExpression) error) (err error) {
-	for i := range set {
-		if err = w(set[i]); err != nil {
-			return
-		}
-	}
-
-	return
-}
-
-// Filter iterates through every slice item, calls f(WorkflowExpression) (bool, err) and return filtered slice
-//
-// This function is auto-generated.
-func (set WorkflowExpressionSet) Filter(f func(*WorkflowExpression) (bool, error)) (out WorkflowExpressionSet, err error) {
-	var ok bool
-	out = WorkflowExpressionSet{}
-	for i := range set {
-		if ok, err = f(set[i]); err != nil {
-			return
-		} else if ok {
-			out = append(out, set[i])
-		}
 	}
 
 	return

@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/cortezaproject/corteza-server/automation/types"
+	"github.com/cortezaproject/corteza-server/pkg/expr"
 	"github.com/cortezaproject/corteza-server/pkg/label"
 	"github.com/cortezaproject/corteza-server/pkg/payload"
 	"github.com/go-chi/chi"
@@ -107,7 +108,7 @@ type (
 		// Scope POST parameter
 		//
 		// Workflow meta data
-		Scope types.Variables
+		Scope expr.Variables
 
 		// Steps POST parameter
 		//
@@ -169,7 +170,7 @@ type (
 		// Scope POST parameter
 		//
 		// Workflow meta data
-		Scope types.Variables
+		Scope expr.Variables
 
 		// Steps POST parameter
 		//
@@ -222,7 +223,7 @@ type (
 		// Scope POST parameter
 		//
 		// Workflow meta data
-		Scope types.Variables
+		Scope expr.Variables
 
 		// RunAs POST parameter
 		//
@@ -423,7 +424,7 @@ func (r WorkflowCreate) GetKeepSessions() int {
 }
 
 // Auditable returns all auditable/loggable parameters
-func (r WorkflowCreate) GetScope() types.Variables {
+func (r WorkflowCreate) GetScope() expr.Variables {
 	return r.Scope
 }
 
@@ -632,7 +633,7 @@ func (r WorkflowUpdate) GetKeepSessions() int {
 }
 
 // Auditable returns all auditable/loggable parameters
-func (r WorkflowUpdate) GetScope() types.Variables {
+func (r WorkflowUpdate) GetScope() expr.Variables {
 	return r.Scope
 }
 
@@ -949,7 +950,7 @@ func (r WorkflowTest) GetWorkflowID() uint64 {
 }
 
 // Auditable returns all auditable/loggable parameters
-func (r WorkflowTest) GetScope() types.Variables {
+func (r WorkflowTest) GetScope() expr.Variables {
 	return r.Scope
 }
 

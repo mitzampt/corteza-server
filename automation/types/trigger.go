@@ -4,6 +4,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
+	"github.com/cortezaproject/corteza-server/pkg/expr"
 	"github.com/cortezaproject/corteza-server/pkg/filter"
 	"time"
 )
@@ -28,7 +29,7 @@ type (
 
 		// Initial input scope,
 		// will be merged merged with workflow variables
-		Input Variables `json:"input"`
+		Input expr.Variables `json:"input"`
 
 		Labels map[string]string `json:"labels,omitempty"`
 		Meta   *WorkflowMeta     `json:"meta"`

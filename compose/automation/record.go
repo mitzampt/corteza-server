@@ -42,7 +42,7 @@ package automation
 //			stdHttpPayloadParameters...,
 //		),
 //		Results: stdHttpSendResults,
-//		Handler: func(ctx context.Context, in wfexec.Variables) (wfexec.Variables, error) {
+//		Handler: func(ctx context.Context, in expr.Variables) (expr.Variables, error) {
 //
 //		},
 //	}

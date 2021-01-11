@@ -2,7 +2,7 @@ package automation
 
 import (
 	"context"
-	"github.com/cortezaproject/corteza-server/pkg/wfexec"
+	"github.com/cortezaproject/corteza-server/pkg/expr"
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"net/http"
@@ -23,7 +23,7 @@ func TestHttpRequestMaker(t *testing.T) {
 	t.Run("basic get", func(t *testing.T) {
 		var (
 			r  = require.New(t)
-			in = wfexec.Variables{
+			in = expr.Variables{
 				"url": "http://localhost/test",
 			}
 			req, err = makeHttpRequest(context.Background(), in)
@@ -34,12 +34,12 @@ func TestHttpRequestMaker(t *testing.T) {
 		r.Equal("http://localhost/test", req.URL.String())
 	})
 	//
-	//j := func(in wfexec.Variables) wfexec.Variables {
+	//j := func(in expr.Variables) expr.Variables {
 	//	j, err := json.Marshal(in)
 	//	if err != nil {
 	//		panic(err)
 	//	}
-	//	out := wfexec.Variables{}
+	//	out := expr.Variables{}
 	//	err = json.Unmarshal(j, &out)
 	//	if err != nil {
 	//		panic(err)
@@ -50,7 +50,7 @@ func TestHttpRequestMaker(t *testing.T) {
 	t.Run("post form", func(t *testing.T) {
 		var (
 			r  = require.New(t)
-			in = wfexec.Variables{
+			in = expr.Variables{
 				"form": map[string]interface{}{
 					"a": "a",
 					"b": []string{"b", "b"},

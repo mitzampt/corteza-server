@@ -1,9 +1,11 @@
 package types
 
 import (
+	"context"
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
+	"github.com/cortezaproject/corteza-server/pkg/expr"
 	"github.com/cortezaproject/corteza-server/pkg/filter"
 	"github.com/cortezaproject/corteza-server/pkg/rbac"
 	"time"
@@ -24,7 +26,7 @@ type (
 		KeepSessions int `json:"keepSessions"`
 
 		// Initial input scope
-		Scope Variables `json:"scope"`
+		Scope expr.Variables `json:"scope"`
 
 		Steps WorkflowStepSet `json:"steps"`
 		Paths WorkflowPathSet `json:"paths"`
@@ -63,7 +65,7 @@ type (
 	}
 
 	WorkflowMeta struct {
-		Name        string                 `json:"label"`
+		Name        string                 `json:"name"`
 		Description string                 `json:"description"`
 		Visual      map[string]interface{} `json:"visual"`
 	}
@@ -76,38 +78,36 @@ type (
 		// reference to function or subprocess (workflow)
 		Ref string `json:"ref"`
 
-		// set of tests to check the current scope
-		// valid only for kind=prompt
-		Tests []*WorkflowTestExpression `json:"tests"`
-
-		// set of expressions to evaluate or pass to function
+		// set of expressions to evaluate, test or pass to function
 		// invalid for for kind=~gateway:*
-		Arguments []*WorkflowExpression `json:"arguments"`
+		Arguments []*Expr `json:"arguments"`
 
 		// only valid when kind=function
-		Results []*WorkflowExpression `json:"results"`
+		Results []*Expr `json:"results"`
 
 		Meta WorkflowStepMeta `json:"meta"`
 	}
 
 	WorkflowStepMeta struct {
-		Label       string                 `json:"label"`
+		Name        string                 `json:"name"`
 		Description string                 `json:"description"`
 		Visual      map[string]interface{} `json:"visual"`
 	}
 
 	// WorkflowPath defines connection between two workflow steps
 	WorkflowPath struct {
-		ParentID uint64 `json:"parentID,string"`
-		ChildID  uint64 `json:"childID,string"`
+		// Expression to evaluate over the input variables; results will be set to scope under variable Name
+		Expr string `json:"expr,omitempty"`
 
-		// test expression for gateway paths
-		Test string           `json:"test,string"`
-		Meta WorkflowPathMeta `json:"meta"`
+		eval expr.Evaluable
+
+		ParentID uint64           `json:"parentID,string"`
+		ChildID  uint64           `json:"childID,string"`
+		Meta     WorkflowPathMeta `json:"meta"`
 	}
 
 	WorkflowPathMeta struct {
-		Label       string                 `json:"label"`
+		Name        string                 `json:"name"`
 		Description string                 `json:"description"`
 		Visual      map[string]interface{} `json:"visual"`
 	}
@@ -129,29 +129,6 @@ const (
 // Resource returns a resource ID for this type
 func (r *Workflow) RBACResource() rbac.Resource {
 	return WorkflowRBACResource.AppendID(r.ID)
-}
-
-func ParseWorkflowMeta(ss []string) (p *WorkflowMeta, err error) {
-	p = &WorkflowMeta{}
-	return p, parseStringsInput(ss, p)
-}
-
-func ParseWorkflowStepSet(ss []string) (p WorkflowStepSet, err error) {
-	p = WorkflowStepSet{}
-	return p, parseStringsInput(ss, &p)
-}
-
-func ParseWorkflowPathSet(ss []string) (p WorkflowPathSet, err error) {
-	p = WorkflowPathSet{}
-	return p, parseStringsInput(ss, &p)
-}
-
-func parseStringsInput(ss []string, p interface{}) (err error) {
-	if len(ss) == 0 {
-		return
-	}
-
-	return json.Unmarshal([]byte(ss[0]), &p)
 }
 
 func (vv *WorkflowMeta) Scan(value interface{}) error {
@@ -176,6 +153,15 @@ func (vv *WorkflowMeta) Value() (driver.Value, error) {
 	}
 
 	return json.Marshal(vv)
+}
+
+func (t WorkflowPath) GetExpr() string              { return t.Expr }
+func (t *WorkflowPath) SetEval(eval expr.Evaluable) { t.eval = eval }
+func (t WorkflowPath) Eval(ctx context.Context, scope expr.Variables) (interface{}, error) {
+	return t.eval.Eval(ctx, scope)
+}
+func (t WorkflowPath) Test(ctx context.Context, scope expr.Variables) (bool, error) {
+	return t.eval.Test(ctx, scope)
 }
 
 func (vv *WorkflowStepSet) Scan(value interface{}) error {

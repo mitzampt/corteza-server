@@ -1,10 +1,5 @@
 package fn
 
-import (
-	"fmt"
-	"github.com/cortezaproject/corteza-server/pkg/wfexec"
-)
-
 type (
 	ParamSet []*Param
 	Param    struct {
@@ -16,7 +11,7 @@ type (
 	}
 
 	ParamMeta struct {
-		Label       string                 `json:"label,omitempty"`
+		Name        string                 `json:"name,omitempty"`
 		Description string                 `json:"description,omitempty"`
 		Visual      map[string]interface{} `json:"visual,omitempty"`
 	}
@@ -61,29 +56,30 @@ func Time(p *Param)     { p.Types = append(p.Types, TypeTime) }
 func Reader(p *Param)   { p.Types = append(p.Types, TypeReader) }
 func KV(p *Param)       { p.Types = append(p.Types, TypeKV) }
 
-// CheckInput validates (at compile-time) input data (arguments)
-func (set ParamSet) CheckInput(ee *wfexec.Expressions) error {
-	for _, p := range set {
-		if p.Required && !ee.Has(p.Name) {
-			return fmt.Errorf("%q is required", p.Name)
-		}
-	}
-
-	return nil
-}
-
-// CheckOutput validates (at compile-time) output data (arguments)
-func (set ParamSet) CheckOutput(ee *wfexec.Expressions) error {
-	var ind = make(map[string]bool)
-	for _, p := range set {
-		ind[p.Name] = true
-	}
-
-	for _, name := range ee.Names() {
-		if !ind[name] {
-			return fmt.Errorf("unknown result %q used", name)
-		}
-	}
-
-	return nil
-}
+//
+//// CheckInput validates (at compile-time) input data (arguments)
+//func (set ParamSet) CheckInput(ee *wfexec.Expressions) error {
+//	for _, p := range set {
+//		if p.Required && !ee.Has(p.Name) {
+//			return fmt.Errorf("%q is required", p.Name)
+//		}
+//	}
+//
+//	return nil
+//}
+//
+//// CheckOutput validates (at compile-time) output data (arguments)
+//func (set ParamSet) CheckOutput(ee *wfexec.Expressions) error {
+//	var ind = make(map[string]bool)
+//	for _, p := range set {
+//		ind[p.Name] = true
+//	}
+//
+//	for _, name := range ee.Names() {
+//		if !ind[name] {
+//			return fmt.Errorf("unknown result %q used", name)
+//		}
+//	}
+//
+//	return nil
+//}

@@ -9,7 +9,5 @@ types:
   WorkflowPath:
     noIdField: true
   WorkflowStep: {}
-  WorkflowExpression:
-    noIdField: true
   Session: {}
   State: {}

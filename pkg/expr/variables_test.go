@@ -1,4 +1,4 @@
-package wfexec
+package expr
 
 import (
 	"github.com/stretchr/testify/require"

@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/cortezaproject/corteza-server/automation/types"
+	"github.com/cortezaproject/corteza-server/pkg/expr"
 	"github.com/cortezaproject/corteza-server/pkg/label"
 	"github.com/cortezaproject/corteza-server/pkg/payload"
 	"github.com/go-chi/chi"
@@ -117,7 +118,7 @@ type (
 		// Input POST parameter
 		//
 		// Workflow meta data
-		Input types.Variables
+		Input expr.Variables
 
 		// Labels POST parameter
 		//
@@ -174,7 +175,7 @@ type (
 		// Input POST parameter
 		//
 		// Workflow meta data
-		Input types.Variables
+		Input expr.Variables
 
 		// Labels POST parameter
 		//
@@ -446,7 +447,7 @@ func (r TriggerCreate) GetWorkflowStepID() uint64 {
 }
 
 // Auditable returns all auditable/loggable parameters
-func (r TriggerCreate) GetInput() types.Variables {
+func (r TriggerCreate) GetInput() expr.Variables {
 	return r.Input
 }
 
@@ -637,7 +638,7 @@ func (r TriggerUpdate) GetWorkflowStepID() uint64 {
 }
 
 // Auditable returns all auditable/loggable parameters
-func (r TriggerUpdate) GetInput() types.Variables {
+func (r TriggerUpdate) GetInput() expr.Variables {
 	return r.Input
 }
 

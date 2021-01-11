@@ -3,6 +3,7 @@ package wfexec
 import (
 	"context"
 	"fmt"
+	"github.com/cortezaproject/corteza-server/pkg/expr"
 	"github.com/cortezaproject/corteza-server/pkg/id"
 	"go.uber.org/zap"
 	"sync"
@@ -32,13 +33,11 @@ type (
 		// map key represents state identifier
 		suspended map[uint64]*suspended
 
-		messages []*message
-
 		// how often we check for suspended states and how often idle stat is checked in Wait()
 		workerInterval time.Duration
 
 		// holds final result
-		result Variables
+		result expr.Variables
 		err    error
 
 		mux *sync.RWMutex
@@ -85,22 +84,21 @@ type (
 		err error
 
 		// input variables that were sent to resume the session
-		// (prompt step)
-		input Variables
+		input expr.Variables
 
 		// scope
-		scope Variables
+		scope expr.Variables
 	}
 
 	Frame struct {
-		Created   time.Time     `json:"created"`
-		SessionID uint64        `json:"sessionID"`
-		StateID   uint64        `json:"stateID"`
-		Input     Variables     `json:"input"`
-		Scope     Variables     `json:"scope"`
-		ParentID  uint64        `json:"parentID"`
-		StepID    uint64        `json:"stepID"`
-		LeadTime  time.Duration `json:"leadTime"`
+		Created   time.Time      `json:"created"`
+		SessionID uint64         `json:"sessionID"`
+		StateID   uint64         `json:"stateID"`
+		Input     expr.Variables `json:"input"`
+		Scope     expr.Variables `json:"scope"`
+		ParentID  uint64         `json:"parentID"`
+		StepID    uint64         `json:"stepID"`
+		LeadTime  time.Duration  `json:"leadTime"`
 	}
 
 	// ExecRequest is passed to Exec() functions and contains all information to
@@ -109,11 +107,11 @@ type (
 		SessionID uint64
 		StateID   uint64
 
-		// Current input received when prompting for input
-		Input Variables
+		// Current input received on session resume
+		Input expr.Variables
 
 		// Current scope
-		Scope Variables
+		Scope expr.Variables
 
 		// Helps with gateway join/merge steps
 		// that needs info about the step it's currently merging
@@ -148,16 +146,15 @@ var (
 	}
 )
 
-func NewSession(ctx context.Context, wf *Graph, oo ...sessionOpt) *Session {
+func NewSession(ctx context.Context, g *Graph, oo ...sessionOpt) *Session {
 	s := &Session{
-		g:              wf,
+		g:              g,
 		id:             nextID(),
 		started:        *now(),
 		qState:         make(chan *State, sessionStateChanBuf),
 		qErr:           make(chan error, 1),
 		execLock:       make(chan struct{}, sessionConcurrentExec),
 		suspended:      make(map[uint64]*suspended),
-		messages:       make([]*message, 0),
 		workerInterval: time.Second,
 
 		mux: &sync.RWMutex{},
@@ -210,14 +207,14 @@ func (s *Session) Error() error {
 	return s.err
 }
 
-func (s *Session) Result() Variables {
+func (s *Session) Result() expr.Variables {
 	defer s.mux.RUnlock()
 	s.mux.RLock()
 
 	return s.result
 }
 
-func (s *Session) Exec(ctx context.Context, step Step, scope Variables) error {
+func (s *Session) Exec(ctx context.Context, step Step, scope expr.Variables) error {
 	if s.g.Len() == 0 {
 		return fmt.Errorf("refusing to execute without steps")
 	}
@@ -229,7 +226,7 @@ func (s *Session) Exec(ctx context.Context, step Step, scope Variables) error {
 	return s.enqueue(ctx, NewState(s, nil, step, scope))
 }
 
-func (s *Session) Resume(ctx context.Context, stateId uint64, input Variables) error {
+func (s *Session) Resume(ctx context.Context, stateId uint64, input expr.Variables) error {
 	defer s.mux.Unlock()
 	s.mux.Lock()
 
@@ -335,7 +332,7 @@ func (s *Session) worker(ctx context.Context) {
 				s.mux.Lock()
 
 				// making sure result != nil
-				s.result = Variables{}.Merge(st.scope)
+				s.result = expr.Variables{}.Merge(st.scope)
 				return
 			}
 
@@ -371,21 +368,6 @@ func (s Session) Suspended() bool {
 	defer s.mux.RUnlock()
 	s.mux.RLock()
 	return len(s.suspended) > 0
-}
-
-func (s Session) Messages() []*message {
-	return s.messages
-}
-
-func (s Session) MessagesAfter(messageId uint64) []*message {
-	var mm = make([]*message, 0, len(s.messages))
-	for _, m := range mm {
-		if m.ID > messageId {
-			mm = append(mm, m)
-		}
-	}
-
-	return mm
 }
 
 func (s *Session) queueScheduledSuspended() {
@@ -426,7 +408,7 @@ func (s *Session) exec(ctx context.Context, st *State) {
 		}
 
 		switch result := result.(type) {
-		case Variables:
+		case expr.Variables:
 			// most common (successful) result
 			// session will continue with configured child steps
 			s.log.Debugf("Session(%d).exec(%d) => variables: %v", s.id, st.stateId, result)
@@ -455,14 +437,6 @@ func (s *Session) exec(ctx context.Context, st *State) {
 			s.mux.Unlock()
 			s.eventHandler(SessionStepSuspended, st, s)
 			return
-
-		case *message:
-			// step emitted a message, store it and continue as planned
-			s.log.Debugf("Session(%d).exec(%d) => message received: %v", s.id, st.stateId, result)
-			s.mux.Lock()
-			s.messages = append(s.messages, result)
-			s.mux.Unlock()
-			s.eventHandler(SessionNewMessage, st, s)
 
 		case Steps:
 			// session continues with set of specified steps
@@ -521,7 +495,7 @@ func SetHandler(fn StateChangeHandler) sessionOpt {
 	}
 }
 
-func NewState(ses *Session, caller, current Step, scope Variables) *State {
+func NewState(ses *Session, caller, current Step, scope expr.Variables) *State {
 	return &State{
 		stateId:   nextID(),
 		sessionId: ses.id,
@@ -532,7 +506,7 @@ func NewState(ses *Session, caller, current Step, scope Variables) *State {
 	}
 }
 
-func FinalState(ses *Session, scope Variables) *State {
+func FinalState(ses *Session, scope expr.Variables) *State {
 	return &State{
 		stateId:   nextID(),
 		sessionId: ses.id,

@@ -3,9 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
-	"github.com/PaesslerAG/gval"
 	"github.com/cortezaproject/corteza-server/automation/types"
-	"github.com/cortezaproject/corteza-server/automation/types/fn"
 	"github.com/cortezaproject/corteza-server/pkg/actionlog"
 	intAuth "github.com/cortezaproject/corteza-server/pkg/auth"
 	"github.com/cortezaproject/corteza-server/pkg/errors"
@@ -37,11 +35,10 @@ type (
 		wfgs map[uint64]*wfexec.Graph
 
 		// workflow function registry
-		fnreg map[string]*fn.Function
+		fnreg map[string]*types.Function
 
-		mux *sync.RWMutex
-
-		lang gval.Language
+		mux    *sync.RWMutex
+		parser expr.Parser__
 	}
 
 	workflowAccessController interface {
@@ -81,13 +78,13 @@ func Workflow(log *zap.Logger) *workflow {
 		triggers:  DefaultTrigger,
 		eventbus:  eventbus.Service(),
 		wfgs:      make(map[uint64]*wfexec.Graph),
-		fnreg:     make(map[string]*fn.Function),
+		fnreg:     make(map[string]*types.Function),
 		mux:       &sync.RWMutex{},
-		lang:      expr.Parser(),
+		parser:    expr.NewParser(),
 	}
 }
 
-func (svc *workflow) RegisterFn(ff ...*fn.Function) {
+func (svc *workflow) RegisterFn(ff ...*types.Function) {
 	defer svc.mux.Unlock()
 	svc.mux.Lock()
 	for _, fn := range ff {
@@ -103,18 +100,18 @@ func (svc *workflow) UnregisterFn(rr ...string) {
 	}
 }
 
-func (svc *workflow) getRegisteredFn(name string) *fn.Function {
+func (svc *workflow) getRegisteredFn(name string) *types.Function {
 	defer svc.mux.RUnlock()
 	svc.mux.RLock()
 	return svc.fnreg[name]
 }
 
-func (svc *workflow) RegisteredFn() []*fn.Function {
+func (svc *workflow) RegisteredFn() []*types.Function {
 	defer svc.mux.RUnlock()
 	svc.mux.RLock()
 	var (
 		rr = make([]string, 0, len(svc.fnreg))
-		ff = make([]*fn.Function, 0, len(svc.fnreg))
+		ff = make([]*types.Function, 0, len(svc.fnreg))
 	)
 
 	for ref := range svc.fnreg {
@@ -229,6 +226,10 @@ func (svc *workflow) Create(ctx context.Context, new *types.Workflow) (wf *types
 			return err
 		}
 
+		if err = validateSteps(new.Steps...); err != nil {
+			return
+		}
+
 		wf = &types.Workflow{
 			ID:           nextID(),
 			Handle:       new.Handle,
@@ -286,7 +287,7 @@ func (svc *workflow) UndeleteByID(ctx context.Context, workflowID uint64) error 
 // Start runs a new workflow
 //
 // Workflow execution is asynchronous operation.
-func (svc *workflow) Start(ctx context.Context, workflowID uint64, scope wfexec.Variables) error {
+func (svc *workflow) Start(ctx context.Context, workflowID uint64, scope expr.Variables) error {
 	defer svc.mux.Unlock()
 	svc.mux.Lock()
 	return errors.Internal("pending implementation")
@@ -413,6 +414,10 @@ func (svc workflow) handleUpdate(upd *types.Workflow) workflowUpdateHandler {
 
 		if upd.Steps != nil {
 			if !reflect.DeepEqual(upd.Steps, res.Steps) {
+				if err = validateSteps(upd.Steps...); err != nil {
+					return
+				}
+
 				changes |= workflowChanged | workflowDefChanged
 				res.Steps = upd.Steps
 			}
@@ -548,19 +553,19 @@ func (svc *workflow) workflowStepDefConv(g *wfexec.Graph, s *types.WorkflowStep,
 	conv, err := func() (wfexec.Step, error) {
 		switch s.Kind {
 		case types.WorkflowStepKindExpressions:
-			return svc.workflowExprDefConv(s.Arguments...)
+			return svc.convExpressionStep(s)
 
 		case types.WorkflowStepKindGateway:
-			return svc.workflowGatewayDefConv(g, s, in)
+			return svc.convGateway(g, s, in, out)
 
 		case types.WorkflowStepKindFunction:
-			return svc.workflowActivityDefConv(s)
+			return svc.convFunctionStep(s)
 
-		case types.WorkflowStepKindMessage:
-			return svc.workflowMessageDefConv(s)
+		//case types.WorkflowStepKindMessage:
+		//	return svc.convMessageStep(s)
 
 		case types.WorkflowStepKindPrompt:
-			return svc.workflowPromptDefConv(s)
+			return svc.convPromptStep(s)
 
 		default:
 			return nil, errors.Internal("unsupported step kind %q", s.Kind)
@@ -574,12 +579,13 @@ func (svc *workflow) workflowStepDefConv(g *wfexec.Graph, s *types.WorkflowStep,
 		g.AddStep(conv)
 		return true, err
 	} else {
-		// unresolved
+		// signal caller that we were unable to
+		// resolve definition at the moment
 		return false, nil
 	}
 }
 
-func (svc *workflow) workflowGatewayDefConv(g *wfexec.Graph, s *types.WorkflowStep, in []*types.WorkflowPath) (wfexec.Step, error) {
+func (svc *workflow) convGateway(g *wfexec.Graph, s *types.WorkflowStep, in, out []*types.WorkflowPath) (wfexec.Step, error) {
 	switch s.Ref {
 	case "fork":
 		return wfexec.ForkGateway(), nil
@@ -604,13 +610,20 @@ func (svc *workflow) workflowGatewayDefConv(g *wfexec.Graph, s *types.WorkflowSt
 			pp []*wfexec.GatewayPath
 		)
 
-		for _, p := range in {
-			child := g.StepByID(p.ChildID)
+		for _, c := range out {
+			child := g.StepByID(c.ChildID)
 			if child == nil {
 				return nil, nil
 			}
 
-			p, err := wfexec.NewGatewayPath(svc.lang, child, p.Test)
+			if err := svc.parser.ParseEvaluators(c); err != nil {
+				return nil, err
+			}
+
+			p, err := wfexec.NewGatewayPath(child, func(ctx context.Context, scope expr.Variables) (bool, error) {
+				return c.Test(ctx, expr.Variables(scope))
+			})
+
 			if err != nil {
 				return nil, err
 			} else {
@@ -628,80 +641,110 @@ func (svc *workflow) workflowGatewayDefConv(g *wfexec.Graph, s *types.WorkflowSt
 	return nil, fmt.Errorf("unknown workflow type")
 }
 
-func (svc *workflow) workflowExprDefConv(ee ...*types.WorkflowExpression) (*wfexec.Expressions, error) {
-	var (
-		set = wfexec.NewExpressions(svc.lang)
-	)
-
-	for _, e := range ee {
-		if err := set.Set(e.Name, e.Expr); err != nil {
-			return nil, err
-		}
+func (svc *workflow) convExpressionStep(s *types.WorkflowStep) (wfexec.Step, error) {
+	if err := svc.parseExpressions(s.Arguments...); err != nil {
+		return nil, err
 	}
 
-	return set, nil
+	return types.ExpressionsStep(s.Arguments...), nil
 }
 
-func (svc *workflow) workflowActivityDefConv(s *types.WorkflowStep) (wfexec.Step, error) {
+func (svc *workflow) convFunctionStep(s *types.WorkflowStep) (wfexec.Step, error) {
 	if s.Ref == "" {
 		return nil, errors.Internal("function reference missing")
 	}
 
-	if fn := svc.getRegisteredFn(s.Ref); fn == nil {
+	if def := svc.getRegisteredFn(s.Ref); def == nil {
 		return nil, errors.Internal("unknown function %q", s.Ref)
 	} else {
 		var (
-			err    error
-			aa, rr *wfexec.Expressions
+			err error
 		)
 
-		if aa, err = svc.workflowExprDefConv(s.Arguments...); err != nil {
-			return nil, errors.Internal("failed to convert argument for function %s: %s", s.Ref, err).Wrap(err)
-		} else if err = fn.Parameters.CheckInput(aa); err != nil {
-			return nil, errors.Internal("failed to convert argument for function %s: %s", s.Ref, err).Wrap(err)
+		if def.Handler == nil {
+			return nil, errors.Internal("function handler for %q not set", s.Ref)
 		}
 
-		if rr, err = svc.workflowExprDefConv(s.Results...); err != nil {
-			return nil, errors.Internal("failed to convert result for function %s: %s", s.Ref, err).Wrap(err)
-		} else if err = fn.Parameters.CheckInput(aa); err != nil {
-			return nil, errors.Internal("failed to convert result for function %s: %s", s.Ref, err).Wrap(err)
+		if err = svc.parseExpressions(s.Arguments...); err != nil {
+			return nil, errors.Internal("failed to convert argument for function %s: %s", s.Ref, err).Wrap(err)
+			//} else if err = def.Parameters.CheckInput(s.Arguments); err != nil {
+			//	return nil, errors.Internal("failed to convert argument for function %s: %s", s.Ref, err).Wrap(err)
 		}
 
-		return wfexec.Activity(fn.Handler, aa, rr), nil
+		if err = svc.parseExpressions(s.Results...); err != nil {
+			return nil, errors.Internal("failed to convert result for function %s: %s", s.Ref, err).Wrap(err)
+			//} else if err = def.Parameters.CheckInput(s.Results); err != nil {
+			//	return nil, errors.Internal("failed to convert result for function %s: %s", s.Ref, err).Wrap(err)
+		}
+
+		return types.FunctionStep(def, s.Arguments, s.Results)
 	}
 }
 
-// converts message definition to wfexec.Step
-//
-// Reference is used to determinate message type and argument for
-// with name "message" is expected that holds expression that will yield message string
-func (svc *workflow) workflowMessageDefConv(s *types.WorkflowStep) (wfexec.Step, error) {
-	var (
-		err  error
-		expr *wfexec.Expression
-	)
+// converts prompt definition to wfexec.Step
+func (svc *workflow) convPromptStep(s *types.WorkflowStep) (wfexec.Step, error) {
+	if err := svc.parseExpressions(s.Arguments...); err != nil {
+		return nil, err
+	}
 
-	for _, arg := range s.Arguments {
-		if arg.Name == "message" {
-			expr, err = wfexec.NewExpression(svc.lang, "", arg.Expr)
-			if err != nil {
-				return nil, err
+	// Use expression step as base for prompt step
+	return types.PromptStep(s.Ref, types.ExpressionsStep(s.Arguments...)), nil
+}
+
+func (svc *workflow) parseExpressions(ee ...*types.Expr) (err error) {
+	for _, e := range ee {
+		if err = svc.parser.ParseEvaluators(e); err != nil {
+			return
+		}
+
+		for _, t := range e.Tests {
+			if err = svc.parser.ParseEvaluators(t); err != nil {
+				return
 			}
 		}
 	}
 
-	if expr == nil {
-		return nil, errors.Internal("message step with undefined message expression")
-	}
-
-	return wfexec.NewMessageEmitter(s.Ref, expr), nil
+	return nil
 }
 
-// converts prompt definition to wfexec.Step
-//
-//
-func (svc *workflow) workflowPromptDefConv(s *types.WorkflowStep) (wfexec.Step, error) {
-	return wfexec.NewPrompt(s.Ref, "foo"), nil
+func validateSteps(ss ...*types.WorkflowStep) error {
+	var (
+		IDs = make(map[uint64]int)
+	)
+
+	for i, s := range ss {
+		if p, has := IDs[s.ID]; has {
+			return fmt.Errorf("duplicate step ID (%d) used for steps on positions %d and %d", s.ID, p, i)
+		}
+
+		IDs[s.ID] = i
+
+		switch s.Kind {
+		case types.WorkflowStepKindExpressions:
+			if len(s.Results) > 0 {
+				return errors.Internal("expressions step (ID=%d, position=%d) does not accept results", s.ID, i)
+			}
+
+		case types.WorkflowStepKindGateway:
+			if len(s.Arguments) > 0 {
+				return errors.Internal("gateway step (ID=%d, position=%d) does not accept arguments", s.ID, i)
+			}
+			if len(s.Results) > 0 {
+				return errors.Internal("gateway step (ID=%d, position=%d) does not accept results", s.ID, i)
+			}
+
+		case types.WorkflowStepKindFunction:
+		case types.WorkflowStepKindPrompt:
+			if len(s.Results) > 0 {
+				return errors.Internal("prompt step (ID=%d, position=%d) does not accept results", s.ID, i)
+			}
+
+		default:
+			return errors.Internal("unknown step kind (ID=%d, position=%d)", s.ID, i)
+		}
+	}
+
+	return nil
 }
 
 func loadWorkflow(ctx context.Context, s store.Storer, workflowID uint64) (res *types.Workflow, err error) {

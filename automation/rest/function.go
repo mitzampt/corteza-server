@@ -4,18 +4,18 @@ import (
 	"context"
 	"github.com/cortezaproject/corteza-server/automation/rest/request"
 	"github.com/cortezaproject/corteza-server/automation/service"
-	"github.com/cortezaproject/corteza-server/automation/types/fn"
+	"github.com/cortezaproject/corteza-server/automation/types"
 )
 
 type (
 	Function struct {
 		svc interface {
-			RegisteredFn() []*fn.Function
+			RegisteredFn() []*types.Function
 		}
 	}
 
 	functionSetPayload struct {
-		Set []*fn.Function `json:"set"`
+		Set []*types.Function `json:"set"`
 	}
 )
 

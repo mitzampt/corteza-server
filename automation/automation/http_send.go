@@ -5,9 +5,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/cortezaproject/corteza-server/automation/types"
 	. "github.com/cortezaproject/corteza-server/automation/types/fn"
+	"github.com/cortezaproject/corteza-server/pkg/expr"
 	"github.com/cortezaproject/corteza-server/pkg/version"
-	"github.com/cortezaproject/corteza-server/pkg/wfexec"
 	"github.com/spf13/cast"
 	"io"
 	"net/http"
@@ -44,7 +45,7 @@ const (
 	httpSendRef = baseRef + ".http.send"
 )
 
-func makeHttpRequest(ctx context.Context, in wfexec.Variables) (req *http.Request, err error) {
+func makeHttpRequest(ctx context.Context, in expr.Variables) (req *http.Request, err error) {
 	var (
 		body   io.Reader
 		header = make(http.Header)
@@ -147,7 +148,7 @@ func makeHttpRequest(ctx context.Context, in wfexec.Variables) (req *http.Reques
 	return
 }
 
-func httpSend(ctx context.Context, in wfexec.Variables) (out wfexec.Variables, err error) {
+func httpSend(ctx context.Context, in expr.Variables) (out expr.Variables, err error) {
 	var (
 		req *http.Request
 		rsp *http.Response
@@ -163,7 +164,7 @@ func httpSend(ctx context.Context, in wfexec.Variables) (out wfexec.Variables, e
 		return
 	}
 
-	out = wfexec.Variables{
+	out = expr.Variables{
 		"status":        rsp.Status,
 		"statusCode":    rsp.StatusCode,
 		"header":        rsp.Header,
@@ -174,8 +175,8 @@ func httpSend(ctx context.Context, in wfexec.Variables) (out wfexec.Variables, e
 	return
 }
 
-func httpSenders() []*Function {
-	return []*Function{
+func httpSenders() []*types.Function {
+	return []*types.Function{
 		httpSendRequest(),
 		httpSendGetRequest(),
 		httpSendPostRequest(),
@@ -185,8 +186,8 @@ func httpSenders() []*Function {
 	}
 }
 
-func httpSendRequest() *Function {
-	return &Function{
+func httpSendRequest() *types.Function {
+	return &types.Function{
 		Ref: httpSendRef,
 		//Meta: &FunctionMeta{},
 		Parameters: append(append(
@@ -199,62 +200,62 @@ func httpSendRequest() *Function {
 	}
 }
 
-func httpSendGetRequest() *Function {
-	return &Function{
+func httpSendGetRequest() *types.Function {
+	return &types.Function{
 		Ref: httpSendRef + ".get",
 		//Meta:       &FunctionMeta{},
 		Parameters: stdHttpSendParameters,
 		Results:    stdHttpSendResults,
-		Handler: func(ctx context.Context, in wfexec.Variables) (out wfexec.Variables, err error) {
-			return httpSend(ctx, in.Merge(wfexec.Variables{"method": http.MethodGet}))
+		Handler: func(ctx context.Context, in expr.Variables) (out expr.Variables, err error) {
+			return httpSend(ctx, in.Merge(expr.Variables{"method": http.MethodGet}))
 		},
 	}
 }
 
-func httpSendPostRequest() *Function {
-	return &Function{
+func httpSendPostRequest() *types.Function {
+	return &types.Function{
 		Ref: httpSendRef + ".post",
 		//Meta:       &FunctionMeta{},
 		Parameters: append(stdHttpSendParameters, stdHttpPayloadParameters...),
 		Results:    stdHttpSendResults,
-		Handler: func(ctx context.Context, in wfexec.Variables) (out wfexec.Variables, err error) {
-			return httpSend(ctx, in.Merge(wfexec.Variables{"method": http.MethodPost}))
+		Handler: func(ctx context.Context, in expr.Variables) (out expr.Variables, err error) {
+			return httpSend(ctx, in.Merge(expr.Variables{"method": http.MethodPost}))
 		},
 	}
 }
 
-func httpSendPutRequest() *Function {
-	return &Function{
+func httpSendPutRequest() *types.Function {
+	return &types.Function{
 		Ref: httpSendRef + ".put",
 		//Meta:       &FunctionMeta{},
 		Parameters: append(stdHttpSendParameters, stdHttpPayloadParameters...),
 		Results:    stdHttpSendResults,
-		Handler: func(ctx context.Context, in wfexec.Variables) (out wfexec.Variables, err error) {
-			return httpSend(ctx, in.Merge(wfexec.Variables{"method": http.MethodPut}))
+		Handler: func(ctx context.Context, in expr.Variables) (out expr.Variables, err error) {
+			return httpSend(ctx, in.Merge(expr.Variables{"method": http.MethodPut}))
 		},
 	}
 }
 
-func httpSendPatchRequest() *Function {
-	return &Function{
+func httpSendPatchRequest() *types.Function {
+	return &types.Function{
 		Ref: httpSendRef + ".patch",
 		//Meta:       &FunctionMeta{},
 		Parameters: append(stdHttpSendParameters, stdHttpPayloadParameters...),
 		Results:    stdHttpSendResults,
-		Handler: func(ctx context.Context, in wfexec.Variables) (out wfexec.Variables, err error) {
-			return httpSend(ctx, in.Merge(wfexec.Variables{"method": http.MethodPatch}))
+		Handler: func(ctx context.Context, in expr.Variables) (out expr.Variables, err error) {
+			return httpSend(ctx, in.Merge(expr.Variables{"method": http.MethodPatch}))
 		},
 	}
 }
 
-func httpSendDeleteRequest() *Function {
-	return &Function{
+func httpSendDeleteRequest() *types.Function {
+	return &types.Function{
 		Ref: httpSendRef + ".delete",
 		//Meta:       &FunctionMeta{},
 		Parameters: append(stdHttpSendParameters, stdHttpPayloadParameters...),
 		Results:    stdHttpSendResults,
-		Handler: func(ctx context.Context, in wfexec.Variables) (out wfexec.Variables, err error) {
-			return httpSend(ctx, in.Merge(wfexec.Variables{"method": http.MethodDelete}))
+		Handler: func(ctx context.Context, in expr.Variables) (out expr.Variables, err error) {
+			return httpSend(ctx, in.Merge(expr.Variables{"method": http.MethodDelete}))
 		},
 	}
 }

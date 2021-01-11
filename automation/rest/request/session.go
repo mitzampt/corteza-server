@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/cortezaproject/corteza-server/automation/types"
+	"github.com/cortezaproject/corteza-server/pkg/expr"
 	"github.com/cortezaproject/corteza-server/pkg/payload"
 	"github.com/go-chi/chi"
 	"io"
@@ -112,7 +113,7 @@ type (
 		// Input POST parameter
 		//
 		// Workflow meta data
-		Input types.Variables
+		Input expr.Variables
 	}
 )
 
@@ -427,7 +428,7 @@ func (r SessionResume) GetStateID() uint64 {
 }
 
 // Auditable returns all auditable/loggable parameters
-func (r SessionResume) GetInput() types.Variables {
+func (r SessionResume) GetInput() expr.Variables {
 	return r.Input
 }
 

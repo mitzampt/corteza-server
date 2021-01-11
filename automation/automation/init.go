@@ -1,11 +1,13 @@
 package automation
 
-import "github.com/cortezaproject/corteza-server/automation/types/fn"
+import (
+	"github.com/cortezaproject/corteza-server/automation/types"
+)
 
 const (
 	baseRef = "base"
 )
 
-func List() []*fn.Function {
+func List() []*types.Function {
 	return httpSenders()
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/cortezaproject/corteza-server/pkg/actionlog"
 	"github.com/cortezaproject/corteza-server/pkg/auth"
 	"github.com/cortezaproject/corteza-server/pkg/errors"
+	"github.com/cortezaproject/corteza-server/pkg/expr"
 	"github.com/cortezaproject/corteza-server/pkg/sentry"
 	"github.com/cortezaproject/corteza-server/pkg/wfexec"
 	"github.com/cortezaproject/corteza-server/store"
@@ -148,7 +149,7 @@ func (svc *session) Start(g *wfexec.Graph, i auth.Identifiable, ssp types.Sessio
 // Resume resumes suspended session/state
 //
 // Session can only be resumed by knowing session and state ID. Resume is an asynchronous operation
-func (svc *session) Resume(sessionID, stateID uint64, i auth.Identifiable, input types.Variables) error {
+func (svc *session) Resume(sessionID, stateID uint64, i auth.Identifiable, input expr.Variables) error {
 	var (
 		ctx = auth.SetIdentityToContext(context.Background(), i)
 	)

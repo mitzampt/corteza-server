@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"github.com/cortezaproject/corteza-server/automation/service"
 	"github.com/cortezaproject/corteza-server/automation/types"
+	"github.com/cortezaproject/corteza-server/pkg/expr"
 	"github.com/cortezaproject/corteza-server/pkg/filter"
 	"github.com/cortezaproject/corteza-server/pkg/id"
 	"github.com/cortezaproject/corteza-server/store"
 	"github.com/cortezaproject/corteza-server/tests/helpers"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/steinfletcher/apitest-jsonpath"
 	"github.com/stretchr/testify/require"
 	"net/http"
@@ -182,7 +184,7 @@ func TestWorkflowCreateFull(t *testing.T) {
 			Enabled:      true,
 			Trace:        true,
 			KeepSessions: 10000,
-			Scope:        types.Variables{"foo": "bar"},
+			Scope:        expr.Variables{"foo": "bar"},
 			Steps: types.WorkflowStepSet{
 				{ID: 1, Kind: types.WorkflowStepKindExpressions, Meta: types.WorkflowStepMeta{Visual: map[string]interface{}{"foo": "bar"}}},
 				{ID: 2, Kind: types.WorkflowStepKindExpressions},
@@ -384,4 +386,93 @@ func TestWorkflowLabels(t *testing.T) {
 		req.NotNil(set.FindByID(ID))
 		req.NotNil(set.FindByID(ID).Labels)
 	})
+}
+
+func TestWorkflowStepsPayload(t *testing.T) {
+	wf := &types.Workflow{}
+	h := newHelper(t)
+	h.allow(types.AutomationRBACResource, "workflow.create")
+
+	h.apiInit().
+		Debug().
+		Post("/workflows/").
+		JSON(`{
+	"scope": {
+		"foo": "",
+		"bar": "",
+		"baz": "",
+		"hgtg": 42
+	},
+	
+	"meta": {
+		"name": "name of the workdflow",
+		"description": "lorem ipsum dolor sit...",
+		"visual":  { "arbitrary key": "arbitrary value" }
+	},
+	
+	"steps": [
+		{ "stepID": "100",
+		  "kind":   "expressions",
+		  "meta": { "name": "step name text", "description": "step description text", "visual":  { "arbitrary key": "arbitrary value" }}
+		},
+		{ "stepID": "101",
+		  "kind":   "expressions",
+		  
+		  "arguments": [
+			  { "name":  "foo", "expr": "\"foo\"" },
+			  { "name":  "bar", "expr": "\"bar\"" }
+		  ] 
+		},
+		
+		{ "stepID": "200", "kind": "gateway", "ref": "join" },
+		{ "stepID": "201", "kind": "gateway", "ref": "fork" },
+		{ "stepID": "202", "kind": "gateway", "ref": "excl" },
+		{ "stepID": "203", "kind": "gateway", "ref": "incl" },
+		
+		{ "stepID": "300",
+		  "kind":   "function",
+		  "ref":    "serverSideFuncRef",
+		  "meta": { "description": "ref needs to come from a predefined list of registered functions; arguments pick values from scope and need to be compatible with registered function's parameters; same goes for results" },
+		  
+		  "arguments": [
+			  { "name":  "arg1", "expr": "foo" },
+			  { "name":  "arg2", "expr": "hgtg * 2" }
+		  ],
+		  
+		  "results": [
+			  { "name":  "scopeVar1", "expr": "nameOfVarFromFunctionsResult1" },
+			  { "name":  "scopeVar2", "expr": "nameOfVarFromFunctionsResult2" }
+		  ] 
+		},
+		{ "stepID": "400",
+		  "kind":   "prompt",
+		  "ref":    "clientPromptRef",
+		  "meta": { "description": "backed does not need to know about ref, it only cares that input data (when resuming session) is compatible with arguments (and tests there)" },
+		  
+		  "arguments": [
+			  { "name":  "foo", "expr": "inputVar1",
+				"tests": [
+					{ "expr": "inputVar1 != \"\"", "error": "expecting inputVar1 to be non-empty string" }
+				]
+			  },
+			  { "name":  "bar", "expr": "inputVar2" }
+		  ]
+		}
+	],
+	
+	"paths": [
+		{ "parentID":  "201", "childID":  "300", "expr": "hgtg == 42",
+		  "meta": { "name": "...", "description": "only if equals 42" } },
+		{ "parentID":  "201", "childID":  "400",
+		  "meta": { "name": "...", "description": "else" } }
+	]
+}`).
+		Header("Accept", "application/json").
+		Expect(t).
+		Status(http.StatusOK).
+		Assert(helpers.AssertNoErrors).
+		End().
+		JSON(&struct{ Response *types.Workflow }{Response: wf})
+
+	spew.Dump(wf)
 }

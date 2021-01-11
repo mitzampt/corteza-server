@@ -8,6 +8,7 @@ import (
 	"github.com/cortezaproject/corteza-server/automation/types"
 	"github.com/cortezaproject/corteza-server/pkg/api"
 	"github.com/cortezaproject/corteza-server/pkg/auth"
+	"github.com/cortezaproject/corteza-server/pkg/expr"
 	"github.com/cortezaproject/corteza-server/pkg/filter"
 	"github.com/cortezaproject/corteza-server/pkg/payload"
 )
@@ -17,7 +18,7 @@ type (
 		svc interface {
 			Search(ctx context.Context, filter types.SessionFilter) (types.SessionSet, types.SessionFilter, error)
 			LookupByID(ctx context.Context, sessionID uint64) (*types.Session, error)
-			Resume(sessionID, stateID uint64, i auth.Identifiable, input types.Variables) error
+			Resume(sessionID, stateID uint64, i auth.Identifiable, input expr.Variables) error
 		}
 	}
 

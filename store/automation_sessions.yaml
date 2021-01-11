@@ -10,8 +10,8 @@ fields:
   - { field: EventType }
   - { field: ResourceType }
   - { field: Status,     type: int }
-  - { field: Input,      type: "types.Variables" }
-  - { field: Output,     type: "types.Variables" }
+  - { field: Input,      type: "expr.Variables" }
+  - { field: Output,     type: "expr.Variables" }
   - { field: Stacktrace, type: "types.Stacktrace" }
   - { field: CreatedBy }
   - { field: CreatedAt }

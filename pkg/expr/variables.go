@@ -1,13 +1,46 @@
-package wfexec
+package expr
 
 import (
+	"database/sql/driver"
+	"encoding/json"
+	"fmt"
 	"github.com/spf13/cast"
 	"time"
 )
 
 type (
+	// Variables uses same structure as expr.Variables
+	// but implements scan/value to support serialization into store
 	Variables map[string]interface{}
 )
+
+func ParseVariables(ss []string) (p Variables, err error) {
+	p = Variables{}
+	if len(ss) == 0 {
+		return
+	}
+
+	return p, json.Unmarshal([]byte(ss[0]), &p)
+}
+
+func (vv *Variables) Scan(value interface{}) error {
+	//lint:ignore S1034 This typecast is intentional, we need to get []byte out of a []uint8
+	switch value.(type) {
+	case nil:
+		*vv = Variables{}
+	case []uint8:
+		b := value.([]byte)
+		if err := json.Unmarshal(b, vv); err != nil {
+			return fmt.Errorf("can not scan '%v' into Variables: %w", string(b), err)
+		}
+	}
+
+	return nil
+}
+
+func (vv Variables) Value() (driver.Value, error) {
+	return json.Marshal(vv)
+}
 
 // Assign takes base variables and assigns all new variables
 func (vv Variables) Merge(nn ...Variables) Variables {

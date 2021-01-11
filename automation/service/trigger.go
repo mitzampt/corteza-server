@@ -472,8 +472,9 @@ func (svc *trigger) registerTriggers(wf *types.Workflow, runAs auth.Identifiable
 
 				var (
 					// create session scope from predefined workflow scope and trigger input
-					scope = types.Variables(wfexec.Variables(wf.Scope).Merge(wfexec.Variables(t.Input)))
+					scope = wf.Scope.Merge(t.Input)
 				)
+
 				scope["event"] = ev
 
 				if runAs == nil {

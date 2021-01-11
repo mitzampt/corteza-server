@@ -2,40 +2,15 @@ package wfexec
 
 import (
 	"context"
-	"github.com/PaesslerAG/gval"
+	"github.com/cortezaproject/corteza-server/pkg/expr"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
 
-type (
-	gwTestStep struct {
-		stepIdentifier
+func gt(key string, val int) pathTester {
+	return func(ctx context.Context, variables expr.Variables) (bool, error) {
+		return variables.Int(key) > val, nil
 	}
-)
-
-func (*gwTestStep) Exec(context.Context, *ExecRequest) (ExecResponse, error) {
-	return nil, nil
-}
-
-func TestGatewayPath(t *testing.T) {
-	var (
-		req = require.New(t)
-		gwp *GatewayPath
-		err error
-
-		lang = gval.Full()
-	)
-
-	gwp, err = NewGatewayPath(lang, nil, "")
-	req.NoError(err)
-	req.NotNil(gwp)
-
-	gwp, err = NewGatewayPath(lang, nil, "a > 1")
-	req.NoError(err)
-	req.NotNil(gwp)
-
-	gwp, err = NewGatewayPath(lang, nil, "<>")
-	req.Error(err)
 }
 
 func TestJoinGateway(t *testing.T) {
@@ -58,7 +33,7 @@ func TestJoinGateway(t *testing.T) {
 
 	r, err = gw.Exec(nil, &ExecRequest{Parent: p3})
 	req.NoError(err)
-	req.IsType(Variables{}, r)
+	req.IsType(expr.Variables{}, r)
 }
 
 func TestForkGateway(t *testing.T) {
@@ -75,56 +50,54 @@ func TestForkGateway(t *testing.T) {
 
 func TestInclGateway(t *testing.T) {
 	var (
-		req  = require.New(t)
-		lang = gval.Full()
+		req = require.New(t)
 
 		s1, s2, s3 = &wfTestStep{name: "s1"}, &wfTestStep{name: "s2"}, &wfTestStep{name: "s3"}
-		gwp1, _    = NewGatewayPath(lang, s1, "a > 10")
-		gwp2, _    = NewGatewayPath(lang, s2, "a > 5")
-		gwp3, _    = NewGatewayPath(lang, s3, "a > 0")
+		gwp1, _    = NewGatewayPath(s1, gt("a", 10))
+		gwp2, _    = NewGatewayPath(s2, gt("a", 5))
+		gwp3, _    = NewGatewayPath(s3, gt("a", 0))
 
 		gw, err = InclGateway(gwp1, gwp2, gwp3)
 	)
 
-	r, err := gw.Exec(context.Background(), &ExecRequest{Scope: Variables{"a": 11}})
+	r, err := gw.Exec(context.Background(), &ExecRequest{Scope: expr.Variables{"a": 11}})
 	req.NoError(err)
 	req.Equal(Steps{s1, s2, s3}, r)
 
-	r, err = gw.Exec(context.Background(), &ExecRequest{Scope: Variables{"a": 6}})
+	r, err = gw.Exec(context.Background(), &ExecRequest{Scope: expr.Variables{"a": 6}})
 	req.NoError(err)
 	req.Equal(Steps{s2, s3}, r)
 
-	r, err = gw.Exec(context.Background(), &ExecRequest{Scope: Variables{"a": 1}})
+	r, err = gw.Exec(context.Background(), &ExecRequest{Scope: expr.Variables{"a": 1}})
 	req.NoError(err)
 	req.Equal(Steps{s3}, r)
 
-	r, err = gw.Exec(context.Background(), &ExecRequest{Scope: Variables{"a": 0}})
+	r, err = gw.Exec(context.Background(), &ExecRequest{Scope: expr.Variables{"a": 0}})
 	req.Error(err)
 	req.Nil(r)
 }
 
 func TestExclGateway(t *testing.T) {
 	var (
-		req  = require.New(t)
-		lang = gval.Full()
+		req = require.New(t)
 
 		s1, s2, s3 = &wfTestStep{name: "s1"}, &wfTestStep{name: "s2"}, &wfTestStep{name: "s3"}
-		gwp1, _    = NewGatewayPath(lang, s1, "a > 10")
-		gwp2, _    = NewGatewayPath(lang, s2, "a > 5")
-		gwp3, _    = NewGatewayPath(lang, s3, "")
+		gwp1, _    = NewGatewayPath(s1, gt("a", 10))
+		gwp2, _    = NewGatewayPath(s2, gt("a", 5))
+		gwp3, _    = NewGatewayPath(s3, nil)
 
 		gw, err = ExclGateway(gwp1, gwp2, gwp3)
 	)
 
-	r, err := gw.Exec(context.Background(), &ExecRequest{Scope: Variables{"a": 11}})
+	r, err := gw.Exec(context.Background(), &ExecRequest{Scope: expr.Variables{"a": 11}})
 	req.NoError(err)
 	req.Equal(s1, r)
 
-	r, err = gw.Exec(context.Background(), &ExecRequest{Scope: Variables{"a": 6}})
+	r, err = gw.Exec(context.Background(), &ExecRequest{Scope: expr.Variables{"a": 6}})
 	req.NoError(err)
 	req.Equal(s2, r)
 
-	r, err = gw.Exec(context.Background(), &ExecRequest{Scope: Variables{"a": 1}})
+	r, err = gw.Exec(context.Background(), &ExecRequest{Scope: expr.Variables{"a": 1}})
 	req.NoError(err)
 	req.Equal(s3, r)
 }
