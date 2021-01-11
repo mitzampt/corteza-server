@@ -1,4 +1,4 @@
-package functions
+package automation
 
 import "github.com/cortezaproject/corteza-server/automation/types/fn"
 

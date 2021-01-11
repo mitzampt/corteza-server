@@ -2,7 +2,7 @@ package service
 
 import (
 	"context"
-	"github.com/cortezaproject/corteza-server/automation/functions"
+	"github.com/cortezaproject/corteza-server/automation/automation"
 	"github.com/cortezaproject/corteza-server/pkg/actionlog"
 	"github.com/cortezaproject/corteza-server/pkg/id"
 	"github.com/cortezaproject/corteza-server/pkg/objstore"
@@ -95,7 +95,7 @@ func Initialize(ctx context.Context, log *zap.Logger, s store.Storer, c Config) 
 }
 
 func Activate(ctx context.Context) (err error) {
-	DefaultWorkflow.RegisterFn(functions.List()...)
+	DefaultWorkflow.RegisterFn(automation.List()...)
 	if err = DefaultWorkflow.Load(ctx); err != nil {
 		return
 	}
