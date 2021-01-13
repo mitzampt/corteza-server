@@ -402,7 +402,12 @@ func (s *Session) exec(ctx context.Context, st *State) {
 
 	{
 		result, st.err = st.step.Exec(ctx, st.MakeRequest())
+
 		if st.err != nil {
+			// @todo try/catch
+			//       check if error-handler is set on state
+			//       if so, set err to ExecRequest.input["error"] and
+			//       execute (enqueue) step
 			s.qErr <- st.err
 			return
 		}
@@ -413,6 +418,10 @@ func (s *Session) exec(ctx context.Context, st *State) {
 			// session will continue with configured child steps
 			s.log.Debugf("Session(%d).exec(%d) => variables: %v", s.id, st.stateId, result)
 			scope = scope.Merge(result)
+
+		// @todo try/catch
+		//       implement try-step
+		//       would set error-handler for all following steps to state
 
 		case *partial:
 			// *partial is returned when step needs to be executed again
