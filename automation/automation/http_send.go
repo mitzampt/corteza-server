@@ -41,10 +41,6 @@ var (
 	}
 )
 
-const (
-	httpSendRef = baseRef + ".http.send"
-)
-
 func makeHttpRequest(ctx context.Context, in expr.Variables) (req *http.Request, err error) {
 	var (
 		body   io.Reader
@@ -188,7 +184,7 @@ func httpSenders() []*types.Function {
 
 func httpSendRequest() *types.Function {
 	return &types.Function{
-		Ref: httpSendRef,
+		Ref: "httpRequest",
 		//Meta: &FunctionMeta{},
 		Parameters: append(append(
 			[]*Param{NewParam("method", String, Required)},
@@ -202,7 +198,7 @@ func httpSendRequest() *types.Function {
 
 func httpSendGetRequest() *types.Function {
 	return &types.Function{
-		Ref: httpSendRef + ".get",
+		Ref: "httpGetRequest",
 		//Meta:       &FunctionMeta{},
 		Parameters: stdHttpSendParameters,
 		Results:    stdHttpSendResults,
@@ -214,7 +210,7 @@ func httpSendGetRequest() *types.Function {
 
 func httpSendPostRequest() *types.Function {
 	return &types.Function{
-		Ref: httpSendRef + ".post",
+		Ref: "httpPostRequest",
 		//Meta:       &FunctionMeta{},
 		Parameters: append(stdHttpSendParameters, stdHttpPayloadParameters...),
 		Results:    stdHttpSendResults,
@@ -226,7 +222,7 @@ func httpSendPostRequest() *types.Function {
 
 func httpSendPutRequest() *types.Function {
 	return &types.Function{
-		Ref: httpSendRef + ".put",
+		Ref: "httpPutRequest",
 		//Meta:       &FunctionMeta{},
 		Parameters: append(stdHttpSendParameters, stdHttpPayloadParameters...),
 		Results:    stdHttpSendResults,
@@ -238,7 +234,7 @@ func httpSendPutRequest() *types.Function {
 
 func httpSendPatchRequest() *types.Function {
 	return &types.Function{
-		Ref: httpSendRef + ".patch",
+		Ref: "httpPatchRequest",
 		//Meta:       &FunctionMeta{},
 		Parameters: append(stdHttpSendParameters, stdHttpPayloadParameters...),
 		Results:    stdHttpSendResults,
@@ -250,7 +246,7 @@ func httpSendPatchRequest() *types.Function {
 
 func httpSendDeleteRequest() *types.Function {
 	return &types.Function{
-		Ref: httpSendRef + ".delete",
+		Ref: "httpDeleteRequest",
 		//Meta:       &FunctionMeta{},
 		Parameters: append(stdHttpSendParameters, stdHttpPayloadParameters...),
 		Results:    stdHttpSendResults,
