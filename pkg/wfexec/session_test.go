@@ -171,3 +171,39 @@ func TestSession_Delays(t *testing.T) {
 	req.Contains(ses.Result(), "waitForInput")
 	req.Equal("foo", ses.Result().String("input", ""))
 }
+
+func bmSessionSimpleStepSequence(c uint64, b *testing.B) {
+	var (
+		ctx = context.Background()
+		g   = NewGraph()
+		err error
+	)
+
+	for i := uint64(1); i <= c; i++ {
+		s := &sesTestStep{name: "start"}
+		s.SetID(i)
+		g.AddStep(s)
+		if i > 1 {
+			g.AddParent(s, g.StepByID(i-1))
+		}
+	}
+
+	b.StartTimer()
+	for n := 0; n < b.N; n++ {
+		ses := NewSession(ctx, g)
+		if err = ses.Exec(ctx, g.StepByID(1), nil); err != nil {
+			b.Fatal(err.Error())
+		}
+
+		ses.Wait(ctx)
+	}
+	b.StopTimer()
+}
+
+func BenchmarkSessionSimple1StepSequence(b *testing.B)       { bmSessionSimpleStepSequence(1, b) }
+func BenchmarkSessionSimple10StepSequence(b *testing.B)      { bmSessionSimpleStepSequence(10, b) }
+func BenchmarkSessionSimple100StepSequence(b *testing.B)     { bmSessionSimpleStepSequence(100, b) }
+func BenchmarkSessionSimple1000StepSequence(b *testing.B)    { bmSessionSimpleStepSequence(1000, b) }
+func BenchmarkSessionSimple10000StepSequence(b *testing.B)   { bmSessionSimpleStepSequence(10000, b) }
+func BenchmarkSessionSimple100000StepSequence(b *testing.B)  { bmSessionSimpleStepSequence(100000, b) }
+func BenchmarkSessionSimple1000000StepSequence(b *testing.B) { bmSessionSimpleStepSequence(1000000, b) }
