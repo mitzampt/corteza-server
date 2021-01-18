@@ -256,6 +256,23 @@ func (v *Integer) Set(new interface{}, pp ...string) (err error) {
 }
 func (v Integer) Decode(x reflect.Value) error { x.SetInt(int64(v.v)); return nil }
 
+type Integer64 struct{ v int64 }
+
+func NewInteger64(new int64) Var        { return &Integer64{v: new} }
+func (Integer64) New(new int64) Var     { return &Integer64{v: new} }
+func (Integer64) Type() string          { return "integer64" }
+func (Integer64) Is(v interface{}) bool { _, is := v.(int64); return is }
+func (v Integer64) Get() interface{}    { return v.v }
+func (v *Integer64) Set(new interface{}, pp ...string) (err error) {
+	if err := ReqNoPath(v.Type(), pp); err != nil {
+		return err
+	}
+
+	v.v, err = cast.ToInt64E(new)
+	return err
+}
+func (v Integer64) Decode(x reflect.Value) error { x.SetInt(v.v); return nil }
+
 type Unsigned struct{ v uint }
 
 func NewUnsigned(new uint) Var         { return &Unsigned{v: new} }
