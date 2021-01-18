@@ -85,6 +85,7 @@ func Initialize(ctx context.Context, log *zap.Logger, s store.Storer, c Config) 
 
 	// Register automation functions (record, module, namespace, page, chart manipulators
 	automation.RegisterFunctions(automationService.FunctionRegistrator)
+	automation.RegisterTypes(automationService.TypeRegistrator)
 
 	DefaultStore = s
 

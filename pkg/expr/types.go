@@ -198,7 +198,7 @@ type Any struct{ v interface{} }
 
 func NewAny(new interface{}) Var    { return &Any{v: new} }
 func (Any) New(new interface{}) Var { return &Any{v: new} }
-func (Any) Type() string            { return "any" }
+func (Any) Type() string            { return "Any" }
 func (Any) Is(v interface{}) bool   { return true }
 func (v Any) Get() interface{}      { return v.v }
 func (v *Any) Set(new interface{}, pp ...string) (err error) {
@@ -213,7 +213,7 @@ type Boolean struct{ v bool }
 
 func NewBoolean(new bool) Var         { return &Boolean{v: new} }
 func (Boolean) New(new bool) Var      { return &Boolean{v: new} }
-func (Boolean) Type() string          { return "boolean" }
+func (Boolean) Type() string          { return "Boolean" }
 func (Boolean) Is(v interface{}) bool { _, is := v.(bool); return is }
 func (v Boolean) Get() interface{}    { return v.v }
 func (v *Boolean) Set(new interface{}, pp ...string) (err error) {
@@ -230,7 +230,7 @@ type ID struct{ v uint64 }
 
 func NewID(new uint64) Var       { return &ID{v: new} }
 func (ID) New(new uint64) Var    { return &ID{v: new} }
-func (ID) Type() string          { return "id" }
+func (ID) Type() string          { return "ID" }
 func (ID) Is(v interface{}) bool { _, is := v.(uint64); return is }
 func (v ID) Get() interface{}    { return v.v }
 func (v *ID) Set(new interface{}, pp ...string) (err error) {
@@ -243,7 +243,7 @@ type Integer struct{ v int }
 
 func NewInteger(new int) Var          { return &Integer{v: new} }
 func (Integer) New(new int) Var       { return &Integer{v: new} }
-func (Integer) Type() string          { return "integer" }
+func (Integer) Type() string          { return "Integer" }
 func (Integer) Is(v interface{}) bool { _, is := v.(int); return is }
 func (v Integer) Get() interface{}    { return v.v }
 func (v *Integer) Set(new interface{}, pp ...string) (err error) {
@@ -260,7 +260,7 @@ type Integer64 struct{ v int64 }
 
 func NewInteger64(new int64) Var        { return &Integer64{v: new} }
 func (Integer64) New(new int64) Var     { return &Integer64{v: new} }
-func (Integer64) Type() string          { return "integer64" }
+func (Integer64) Type() string          { return "Integer64" }
 func (Integer64) Is(v interface{}) bool { _, is := v.(int64); return is }
 func (v Integer64) Get() interface{}    { return v.v }
 func (v *Integer64) Set(new interface{}, pp ...string) (err error) {
@@ -277,7 +277,7 @@ type Unsigned struct{ v uint }
 
 func NewUnsigned(new uint) Var         { return &Unsigned{v: new} }
 func (Unsigned) New(new uint) Var      { return &Unsigned{v: new} }
-func (Unsigned) Type() string          { return "unsigned" }
+func (Unsigned) Type() string          { return "Unsigned" }
 func (Unsigned) Is(v interface{}) bool { _, is := v.(uint); return is }
 func (v Unsigned) Get() interface{}    { return v.v }
 func (v *Unsigned) Set(new interface{}, pp ...string) (err error) {
@@ -290,14 +290,14 @@ func (v *Unsigned) Set(new interface{}, pp ...string) (err error) {
 }
 func (v Unsigned) Decode(x reflect.Value) error { x.SetUint(uint64(v.v)); return nil }
 
-type Float struct{ v float64 }
+type Float64 struct{ v float64 }
 
-func NewFloat(new float64) Var      { return &Float{v: new} }
-func (Float) New(new float64) Var   { return &Float{v: new} }
-func (Float) Type() string          { return "float" }
-func (Float) Is(v interface{}) bool { _, is := v.(float64); return is }
-func (v Float) Get() interface{}    { return v.v }
-func (v *Float) Set(new interface{}, pp ...string) (err error) {
+func NewFloat64(new float64) Var      { return &Float64{v: new} }
+func (Float64) New(new float64) Var   { return &Float64{v: new} }
+func (Float64) Type() string          { return "Float64" }
+func (Float64) Is(v interface{}) bool { _, is := v.(float64); return is }
+func (v Float64) Get() interface{}    { return v.v }
+func (v *Float64) Set(new interface{}, pp ...string) (err error) {
 	if err := ReqNoPath(v.Type(), pp); err != nil {
 		return err
 	}
@@ -305,13 +305,13 @@ func (v *Float) Set(new interface{}, pp ...string) (err error) {
 	v.v, err = cast.ToFloat64E(new)
 	return err
 }
-func (v Float) Decode(x reflect.Value) error { x.SetFloat(v.v); return nil }
+func (v Float64) Decode(x reflect.Value) error { x.SetFloat(v.v); return nil }
 
 type String struct{ v string }
 
 func NewString(new string) Var       { return &String{v: new} }
 func (String) New(new string) Var    { return &String{v: new} }
-func (String) Type() string          { return "string" }
+func (String) Type() string          { return "String" }
 func (String) Is(v interface{}) bool { _, is := v.(string); return is }
 func (v String) Get() interface{}    { return v.v }
 func (v *String) Set(new interface{}, pp ...string) (err error) {
@@ -328,7 +328,7 @@ type Datetime struct{ v time.Time }
 
 func NewDatetime(new time.Time) Var    { return &Datetime{v: new} }
 func (Datetime) New(new time.Time) Var { return &Datetime{v: new} }
-func (Datetime) Type() string          { return "datetime" }
+func (Datetime) Type() string          { return "Datetime" }
 func (Datetime) Is(v interface{}) bool { _, is := v.(time.Time); return is }
 func (v Datetime) Get() interface{}    { return v.v }
 func (v *Datetime) Set(new interface{}, pp ...string) (err error) {
@@ -344,7 +344,7 @@ type Duration struct{ v time.Duration }
 
 func NewDuration(new time.Duration) Var    { return &Duration{v: new} }
 func (Duration) New(new time.Duration) Var { return &Duration{v: new} }
-func (Duration) Type() string              { return "duration" }
+func (Duration) Type() string              { return "Duration" }
 func (Duration) Is(v interface{}) bool     { _, is := v.(time.Duration); return is }
 func (v Duration) Get() interface{}        { return v.v }
 func (v *Duration) Set(new interface{}, pp ...string) (err error) {
@@ -360,7 +360,7 @@ type KV struct{ v map[string]string }
 
 func NewKV(new map[string]string) Var    { return &KV{v: new} }
 func (KV) New(new map[string]string) Var { return &KV{v: new} }
-func (KV) Type() string                  { return "keyValue" }
+func (KV) Type() string                  { return "KeyValue" }
 func (KV) Is(v interface{}) bool         { _, err := cast.ToStringMapStringE(v); return err != nil }
 func (v KV) Get() interface{}            { return v.v }
 func (v *KV) Set(new interface{}, pp ...string) error {
@@ -371,7 +371,7 @@ type KVV struct{ v map[string][]string }
 
 func NewKVV(new map[string][]string) Var    { return &KVV{v: new} }
 func (KVV) New(new map[string][]string) Var { return &KVV{v: new} }
-func (KVV) Type() string                    { return "keyValues" }
+func (KVV) Type() string                    { return "KeyValues" }
 func (KVV) Is(v interface{}) bool           { _, err := cast.ToStringMapStringSliceE(v); return err != nil }
 func (v KVV) Get() interface{}              { return v.v }
 func (v *KVV) Set(new interface{}, pp ...string) error {
@@ -401,7 +401,7 @@ type Reader struct{ v io.Reader }
 
 func NewReader(new io.Reader) Var    { return &Reader{v: new} }
 func (Reader) New(new io.Reader) Var { return &Reader{v: new} }
-func (Reader) Type() string          { return "reader" }
+func (Reader) Type() string          { return "Reader" }
 func (Reader) Is(v interface{}) bool { _, is := v.(io.Reader); return is }
 func (v Reader) Get() interface{}    { return v.v }
 func (v *Reader) Set(new interface{}, pp ...string) error {

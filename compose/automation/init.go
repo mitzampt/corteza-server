@@ -2,6 +2,7 @@ package automation
 
 import (
 	"github.com/cortezaproject/corteza-server/automation/types"
+	"github.com/cortezaproject/corteza-server/pkg/expr"
 )
 
 func RegisterFunctions(reg func(*types.Function)) {
@@ -10,50 +11,8 @@ func RegisterFunctions(reg func(*types.Function)) {
 	records.register(reg)
 }
 
-func List(records recordService) []*types.Function {
-	var (
-		// hNamespace
-		// hModule
-
-		hRecords = &recordsHandler{
-			ns:  nil, // @todo
-			mod: nil, // @todo
-			rec: records,
-		}
-
-		// hPage
-		// hChart
-	)
-
-	return []*types.Function{
-		//hNamespace.LookupByID(),
-		//hNamespace.Save(),
-		//hNamespace.Create(),
-		//hNamespace.Update(),
-		//hNamespace.Delete(),
-
-		//hModule.LookupByID(),
-		//hModule.Save(),
-		//hModule.Create(),
-		//hModule.Update(),
-		//hModule.Delete(),
-
-		hRecords.LookupByID(),
-		hRecords.Save(),
-		hRecords.Create(),
-		hRecords.Update(),
-		hRecords.Delete(),
-
-		//hPage.LookupByID(),
-		//hPage.Save(),
-		//hPage.Create(),
-		//hPage.Update(),
-		//hPage.Delete(),
-
-		//hChart.LookupByID(),
-		//hChart.Save(),
-		//hChart.Create(),
-		//hChart.Update(),
-		//hChart.Delete(),
-	}
+func RegisterTypes(reg func(p expr.Var)) {
+	reg(&Namespace{})
+	reg(&Module{})
+	reg(&Record{})
 }
