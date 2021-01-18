@@ -23,8 +23,8 @@ func TestHttpRequestMaker(t *testing.T) {
 	t.Run("basic get", func(t *testing.T) {
 		var (
 			r  = require.New(t)
-			in = expr.Variables{
-				"url": "http://localhost/test",
+			in = expr.Vars{
+				"url": expr.NewString("http://localhost/test"),
 			}
 			req, err = makeHttpRequest(context.Background(), in)
 		)
@@ -34,12 +34,12 @@ func TestHttpRequestMaker(t *testing.T) {
 		r.Equal("http://localhost/test", req.URL.String())
 	})
 	//
-	//j := func(in expr.Variables) expr.Variables {
+	//j := func(in expr.Vars) expr.Vars {
 	//	j, err := json.Marshal(in)
 	//	if err != nil {
 	//		panic(err)
 	//	}
-	//	out := expr.Variables{}
+	//	out := expr.Vars{}
 	//	err = json.Unmarshal(j, &out)
 	//	if err != nil {
 	//		panic(err)
@@ -50,12 +50,12 @@ func TestHttpRequestMaker(t *testing.T) {
 	t.Run("post form", func(t *testing.T) {
 		var (
 			r  = require.New(t)
-			in = expr.Variables{
-				"form": map[string]interface{}{
-					"a": "a",
+			in = expr.Vars{
+				"form": expr.NewKVV(map[string][]string{
+					"a": []string{"a"},
 					"b": []string{"b", "b"},
-					"i": 42,
-				},
+					"i": []string{"42"},
+				}),
 			}
 			req, err = makeHttpRequest(context.Background(), in)
 		)

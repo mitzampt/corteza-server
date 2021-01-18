@@ -59,6 +59,10 @@ func Proc() {
 		optionSrc     []string
 		optionDefs    []*optionsDef
 
+		aFuncsSrcPath = filepath.Join("*", "automation", "*.yaml")
+		aFuncsSrc     []string
+		aFuncsDefs    []*aFuncDefs
+
 		tpls    *template.Template
 		tplBase = template.New("").
 			Funcs(map[string]interface{}{
@@ -151,6 +155,9 @@ func Proc() {
 		optionSrc = glob(optionSrcPath)
 		output("loaded %d option definitions from %s\n", len(optionSrc), optionSrcPath)
 
+		aFuncsSrc = glob(aFuncsSrcPath)
+		output("loaded %d function definitions from %s\n", len(aFuncsSrc), aFuncsSrcPath)
+
 		if watchChanges {
 			if watcher != nil {
 				watcher.Close()
@@ -166,6 +173,7 @@ func Proc() {
 			fileList = append(fileList, restSrc...)
 			fileList = append(fileList, storeSrc...)
 			fileList = append(fileList, optionSrc...)
+			fileList = append(fileList, aFuncsSrc...)
 
 			for _, d := range fileList {
 				handleError(watcher.Add(d))
@@ -242,6 +250,16 @@ func Proc() {
 			}
 
 			if outputErr(err, "fail to process options:\n") {
+				return
+			}
+
+			if aFuncsDefs, err = procAutomationFunctions(aFuncsSrc...); err == nil {
+				if genCode {
+					err = genAutomationFunctions(tpls, aFuncsDefs...)
+				}
+			}
+
+			if outputErr(err, "failed to process store:\n") {
 				return
 			}
 

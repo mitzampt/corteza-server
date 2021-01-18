@@ -1,0 +1,165 @@
+prefix: compose
+
+imports:
+  - github.com/cortezaproject/corteza-server/compose/types
+  - github.com/cortezaproject/corteza-server/pkg/label
+  - time
+
+params:
+  module: &module
+    required: true
+    types:
+      - { wf: expr.ID,     go: uint64,          suffix: ID }
+      - { wf: expr.String, go: string,          suffix: handle }
+      - { wf: Module,      go: "*types.Module", suffix: full }
+    meta:
+      label: Module to set record type
+      description: |-
+        Even with unique record ID across all modules, module needs to be known
+        before doing any record operations. Mainly because records of different
+        modules can be located in different stores.
+
+  namespace: &namespace
+    required: true
+    types:
+      - { wf: expr.ID,     go: uint64,             suffix: ID }
+      - { wf: expr.String, go: string,             suffix: handle }
+      - { wf: Namespace,   go: "*types.Namespace", suffix: full }
+
+  recordID: &recordID
+    required: true
+    types:
+      - { wf: expr.ID,     go: uint64 }
+
+  values: &values
+    types: [ { wf: expr.KV,        go: 'types.RecordValueSet' }]
+
+  labels: &labels
+    types: [ { wf: expr.KV,        go: 'label.Labels' }]
+
+  ownedBy: &ownedBy
+    types: [ { wf: expr.ID,        go: uint64 } ]
+    meta:
+      label: Record owner
+      visual:
+        ref: users
+
+  createdBy: &createdBy
+    types: [ { wf: expr.ID,        go: uint64 } ]
+    meta:
+      label: Record creator
+      visual:
+        ref: users
+
+  createdAt: &createdAt
+    types: [ { wf: expr.Datetime,  go: "*time.Time" } ]
+
+  updatedBy: &updatedBy
+    types: [ { wf: expr.ID,        go: uint64 } ]
+    meta:
+      label: Record updater
+      visual:
+        ref: users
+
+  updatedAt: &updatedAt
+    types: [ { wf: expr.Datetime,  go: "*time.Time" } ]
+
+  deletedBy: &deletedBy
+    types: [ { wf: expr.ID,        go: uint64 } ]
+    meta:
+      label: Record updater
+      visual:
+        ref: users
+
+  deletedAt: &deletedAt
+    types: [ { wf: expr.Datetime,  go: "*time.Time" } ]
+
+  record: &record
+    wf: Record
+    go: "*types.Record"
+
+functions:
+  lookupByID:
+    meta:
+      short: Lookup for compose record by ID
+    params:
+      recordID: *recordID
+      module: *module
+      namespace: *namespace
+    results:
+      record: *record
+
+  save:
+    meta:
+      short: Save record
+    params:
+      record: *record
+    results:
+      record: *record
+
+  # @todo validate
+  #       -> record
+  #       <- errors RVSE
+  #       <- valid  (bool)
+
+  # @todo copy
+  #       -> source  Record
+  #       -> target  Record
+  #       -> include []string list of fields from source record to copy
+  #       -> exclude []string list of fields from source record to copy
+
+  create:
+    meta:
+      short: Creates and stores a new record
+    params:
+      module: *module
+      namespace: *namespace
+      values: *values
+      labels: *labels
+      ownedBy: *ownedBy
+      createdBy: *createdBy
+      createdAt: *createdAt
+      updatedBy: *updatedBy
+      updatedAt: *updatedAt
+      deletedBy: *deletedBy
+      deletedAt: *deletedAt
+    results:
+      record: *record
+
+  update:
+    meta:
+      short: Updates an existing record
+    params:
+      module: *module
+      namespace: *namespace
+      values: *values
+      labels: *labels
+      ownedBy: *ownedBy
+      createdBy: *createdBy
+      createdAt: *createdAt
+      updatedBy: *updatedBy
+      updatedAt: *updatedAt
+      deletedBy: *deletedBy
+      deletedAt: *deletedAt
+    results:
+      record: *record
+
+  delete:
+    meta:
+      short: Soft deletes compose record by ID
+    params:
+      recordID: *recordID
+      module: *module
+      namespace: *namespace
+    results:
+      record: *record
+
+  restore:
+    meta:
+      short: Soft deletes compose record by ID
+    params:
+      recordID: *recordID
+      module: *module
+      namespace: *namespace
+    results:
+      record: *record

@@ -5,56 +5,75 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/cortezaproject/corteza-server/automation/types"
-	. "github.com/cortezaproject/corteza-server/automation/types/fn"
+	. "github.com/cortezaproject/corteza-server/automation/types"
 	"github.com/cortezaproject/corteza-server/pkg/expr"
 	"github.com/cortezaproject/corteza-server/pkg/version"
-	"github.com/spf13/cast"
 	"io"
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 )
 
 var (
 	stdHttpSendParameters = []*Param{
-		NewParam("url", String, Required),
-		NewParam("header", KV),
-		NewParam("headerAuthBearer", String),
-		NewParam("headerAuthUsername", String),
-		NewParam("headerAuthPassword", String),
-		NewParam("headerContentType", String),
-		NewParam("timeout", Duration),
+		NewParam("url", Types(&expr.String{}), Required),
+		NewParam("header", Types(&expr.KV{})),
+		NewParam("headerAuthBearer", Types(&expr.String{})),
+		NewParam("headerAuthUsername", Types(&expr.String{})),
+		NewParam("headerAuthPassword", Types(&expr.String{})),
+		NewParam("headerContentType", Types(&expr.String{})),
+		NewParam("timeout", Types(&expr.Duration{})),
 	}
 
 	stdHttpPayloadParameters = []*Param{
-		NewParam("form", KV),
-		NewParam("body", String, Reader, Any),
+		NewParam("form", Types(&expr.KVV{})),
+		NewParam("body", Types(&expr.String{}, &expr.Reader{}, &expr.Any{})),
 	}
 
 	stdHttpSendResults = []*Param{
-		NewParam("status", String),
-		NewParam("statusCode", Int),
-		NewParam("header", KV),
-		NewParam("contentLength", Int),
-		NewParam("body", String),
+		NewParam("status", Types(&expr.String{})),
+		NewParam("statusCode", Types(&expr.Integer{})),
+		NewParam("header", Types(&expr.KV{})),
+		NewParam("contentLength", Types(&expr.Integer{})),
+		NewParam("body", Types(&expr.String{})),
 	}
 )
 
-func makeHttpRequest(ctx context.Context, in expr.Variables) (req *http.Request, err error) {
+func makeHttpRequest(ctx context.Context, in expr.Vars) (req *http.Request, err error) {
 	var (
 		body   io.Reader
 		header = make(http.Header)
-		method = strings.ToUpper(in.String("method"))
+		args   = struct {
+			Method             string
+			Form               url.Values
+			Body               interface{}
+			Timeout            time.Duration
+			Url                string
+			Header             http.Header
+			HeaderUserAgent    string
+			HeaderAuthBearer   string
+			HeaderAuthUsername string
+			HeaderAuthPassword string
+			HeaderContentType  string
+		}{
+			HeaderUserAgent: "Corteza-Automation-Client/" + version.Version,
+		}
 	)
 
-	if method == "" && in.Any("form", "body") {
+	if err = in.Decode(&args); err != nil {
+		return
+	}
+
+	args.Method = strings.ToUpper(args.Method)
+
+	if args.Method == "" && (len(args.Form) > 0 || args.Body != nil) {
 		// when no method is set and form or body are passed
-		method = http.MethodPost
+		args.Method = http.MethodPost
 	}
 
 	err = func() error {
-		switch method {
+		switch args.Method {
 		case http.MethodPost, http.MethodPut, http.MethodPatch:
 		default:
 			return nil
@@ -62,20 +81,20 @@ func makeHttpRequest(ctx context.Context, in expr.Variables) (req *http.Request,
 
 		// @todo handle (multiple) file upload as well
 
-		if in.Has("form") {
-			if in.Has("body") {
+		if len(args.Form) > 0 {
+			if args.Body != nil {
 				return fmt.Errorf("can not not use form and body parameters at the same time")
 			}
 
-			var form url.Values
-			form, err = cast.ToStringMapStringSliceE(in["form"])
-			if err != nil {
-				return fmt.Errorf("failed to resolve form values: %w", err)
-			}
+			//var form url.Values
+			//form, err = cast.ToStringMapStringSliceE(in["form"])
+			//if err != nil {
+			//	return fmt.Errorf("failed to resolve form values: %w", err)
+			//}
 
 			header.Add("Content-Type", "application/x-www-form-urlencoded")
 			payload := &bytes.Buffer{}
-			if _, err = payload.WriteString(form.Encode()); err != nil {
+			if _, err = payload.WriteString(args.Form.Encode()); err != nil {
 				return err
 			}
 
@@ -83,11 +102,11 @@ func makeHttpRequest(ctx context.Context, in expr.Variables) (req *http.Request,
 			return nil
 		}
 
-		if !in.Has("body") {
+		if args.Body != nil {
 			return nil
 		}
 
-		switch payload := in["body"].(type) {
+		switch payload := args.Body.(type) {
 		case string:
 			body = strings.NewReader(payload)
 		case []byte:
@@ -97,7 +116,7 @@ func makeHttpRequest(ctx context.Context, in expr.Variables) (req *http.Request,
 		default:
 			aux := &bytes.Buffer{}
 			payload = aux
-			return json.NewEncoder(aux).Encode(in["body"])
+			return json.NewEncoder(aux).Encode(args.Body)
 		}
 
 		return nil
@@ -106,37 +125,39 @@ func makeHttpRequest(ctx context.Context, in expr.Variables) (req *http.Request,
 		return nil, err
 	}
 
-	if in.Has("timeout") {
+	if args.Timeout > 0 {
 		var tfn context.CancelFunc
-		ctx, tfn = context.WithTimeout(ctx, in.Duration("timeout"))
+		ctx, tfn = context.WithTimeout(ctx, args.Timeout)
 		defer tfn()
 	}
 
-	req, err = http.NewRequestWithContext(ctx, method, in.String("url"), body)
+	req, err = http.NewRequestWithContext(ctx, args.Method, args.Url, body)
 	if err != nil {
 		return nil, err
 	}
 
-	header.Set("User-Agent", in.String("headerUserAgent", "Corteza-Automation-Client/"+version.Version))
+	header.Set("User-Agent", args.HeaderUserAgent)
 
-	if in.Has("header") {
-		for k, v := range in["header"].(map[string]string) {
-			header.Add(k, v)
+	if len(args.Header) > 0 {
+		for k, vv := range args.Header {
+			for _, v := range vv {
+				header.Add(k, v)
+			}
 		}
 	}
 
 	switch {
-	case in.Has("headerAuthBearer"):
-		header.Add("Authorization", "Bearer "+in.String("headerAuthBearer"))
-	case in.Any("headerAuthUsername", "headerAuthPassword"):
+	case len(args.HeaderAuthBearer) > 0:
+		header.Add("Authorization", "Bearer "+args.HeaderAuthBearer)
+	case len(args.HeaderAuthPassword+args.HeaderAuthPassword) > 0:
 		req.SetBasicAuth(
-			in.String("headerAuthUsername"),
-			in.String("headerAuthPassword"),
+			args.HeaderAuthPassword,
+			args.HeaderAuthPassword,
 		)
 	}
 
-	if in.Has("headerContentType") {
-		header.Add("Content-Type", in.String("headerContentType"))
+	if len(args.HeaderContentType) > 0 {
+		header.Add("Content-Type", args.HeaderContentType)
 	}
 
 	req.Header = header
@@ -144,7 +165,7 @@ func makeHttpRequest(ctx context.Context, in expr.Variables) (req *http.Request,
 	return
 }
 
-func httpSend(ctx context.Context, in expr.Variables) (out expr.Variables, err error) {
+func httpSend(ctx context.Context, in expr.Vars) (out expr.Vars, err error) {
 	var (
 		req *http.Request
 		rsp *http.Response
@@ -160,7 +181,7 @@ func httpSend(ctx context.Context, in expr.Variables) (out expr.Variables, err e
 		return
 	}
 
-	out = expr.Variables{
+	out = expr.Vars{
 		"status":        rsp.Status,
 		"statusCode":    rsp.StatusCode,
 		"header":        rsp.Header,
@@ -171,23 +192,23 @@ func httpSend(ctx context.Context, in expr.Variables) (out expr.Variables, err e
 	return
 }
 
-func httpSenders() []*types.Function {
-	return []*types.Function{
+func httpSenders() []*Function {
+	return []*Function{
 		httpSendRequest(),
-		httpSendGetRequest(),
-		httpSendPostRequest(),
-		httpSendPutRequest(),
-		httpSendPatchRequest(),
-		httpSendDeleteRequest(),
+		httpSendRequestGet(),
+		httpSendRequestPost(),
+		httpSendRequestPut(),
+		httpSendRequestPatch(),
+		httpSendRequestDelete(),
 	}
 }
 
-func httpSendRequest() *types.Function {
-	return &types.Function{
-		Ref: "httpRequest",
+func httpSendRequest() *Function {
+	return &Function{
+		Ref: "httpSendRequest",
 		//Meta: &FunctionMeta{},
 		Parameters: append(append(
-			[]*Param{NewParam("method", String, Required)},
+			[]*Param{NewParam("method", Types(&expr.String{}), Required)},
 			stdHttpSendParameters...),
 			stdHttpPayloadParameters...,
 		),
@@ -196,62 +217,62 @@ func httpSendRequest() *types.Function {
 	}
 }
 
-func httpSendGetRequest() *types.Function {
-	return &types.Function{
-		Ref: "httpGetRequest",
+func httpSendRequestGet() *Function {
+	return &Function{
+		Ref: "httpSendRequestGet",
 		//Meta:       &FunctionMeta{},
 		Parameters: stdHttpSendParameters,
 		Results:    stdHttpSendResults,
-		Handler: func(ctx context.Context, in expr.Variables) (out expr.Variables, err error) {
-			return httpSend(ctx, in.Merge(expr.Variables{"method": http.MethodGet}))
+		Handler: func(ctx context.Context, in expr.Vars) (out expr.Vars, err error) {
+			return httpSend(ctx, in.Merge(expr.Vars{"method": http.MethodGet}))
 		},
 	}
 }
 
-func httpSendPostRequest() *types.Function {
-	return &types.Function{
-		Ref: "httpPostRequest",
+func httpSendRequestPost() *Function {
+	return &Function{
+		Ref: "httpSendRequestPost",
 		//Meta:       &FunctionMeta{},
 		Parameters: append(stdHttpSendParameters, stdHttpPayloadParameters...),
 		Results:    stdHttpSendResults,
-		Handler: func(ctx context.Context, in expr.Variables) (out expr.Variables, err error) {
-			return httpSend(ctx, in.Merge(expr.Variables{"method": http.MethodPost}))
+		Handler: func(ctx context.Context, in expr.Vars) (out expr.Vars, err error) {
+			return httpSend(ctx, in.Merge(expr.Vars{"method": http.MethodPost}))
 		},
 	}
 }
 
-func httpSendPutRequest() *types.Function {
-	return &types.Function{
-		Ref: "httpPutRequest",
+func httpSendRequestPut() *Function {
+	return &Function{
+		Ref: "httpSendRequestPut",
 		//Meta:       &FunctionMeta{},
 		Parameters: append(stdHttpSendParameters, stdHttpPayloadParameters...),
 		Results:    stdHttpSendResults,
-		Handler: func(ctx context.Context, in expr.Variables) (out expr.Variables, err error) {
-			return httpSend(ctx, in.Merge(expr.Variables{"method": http.MethodPut}))
+		Handler: func(ctx context.Context, in expr.Vars) (out expr.Vars, err error) {
+			return httpSend(ctx, in.Merge(expr.Vars{"method": http.MethodPut}))
 		},
 	}
 }
 
-func httpSendPatchRequest() *types.Function {
-	return &types.Function{
-		Ref: "httpPatchRequest",
+func httpSendRequestPatch() *Function {
+	return &Function{
+		Ref: "httpSendRequestPatch",
 		//Meta:       &FunctionMeta{},
 		Parameters: append(stdHttpSendParameters, stdHttpPayloadParameters...),
 		Results:    stdHttpSendResults,
-		Handler: func(ctx context.Context, in expr.Variables) (out expr.Variables, err error) {
-			return httpSend(ctx, in.Merge(expr.Variables{"method": http.MethodPatch}))
+		Handler: func(ctx context.Context, in expr.Vars) (out expr.Vars, err error) {
+			return httpSend(ctx, in.Merge(expr.Vars{"method": http.MethodPatch}))
 		},
 	}
 }
 
-func httpSendDeleteRequest() *types.Function {
-	return &types.Function{
-		Ref: "httpDeleteRequest",
+func httpSendRequestDelete() *Function {
+	return &Function{
+		Ref: "httpSendRequestDelete",
 		//Meta:       &FunctionMeta{},
 		Parameters: append(stdHttpSendParameters, stdHttpPayloadParameters...),
 		Results:    stdHttpSendResults,
-		Handler: func(ctx context.Context, in expr.Variables) (out expr.Variables, err error) {
-			return httpSend(ctx, in.Merge(expr.Variables{"method": http.MethodDelete}))
+		Handler: func(ctx context.Context, in expr.Vars) (out expr.Vars, err error) {
+			return httpSend(ctx, in.Merge(expr.Vars{"method": http.MethodDelete}))
 		},
 	}
 }
