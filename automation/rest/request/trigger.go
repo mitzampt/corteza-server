@@ -118,7 +118,7 @@ type (
 		// Input POST parameter
 		//
 		// Workflow meta data
-		Input expr.Variables
+		Input expr.Vars
 
 		// Labels POST parameter
 		//
@@ -175,7 +175,7 @@ type (
 		// Input POST parameter
 		//
 		// Workflow meta data
-		Input expr.Variables
+		Input expr.Vars
 
 		// Labels POST parameter
 		//
@@ -447,7 +447,7 @@ func (r TriggerCreate) GetWorkflowStepID() uint64 {
 }
 
 // Auditable returns all auditable/loggable parameters
-func (r TriggerCreate) GetInput() expr.Variables {
+func (r TriggerCreate) GetInput() expr.Vars {
 	return r.Input
 }
 
@@ -638,7 +638,7 @@ func (r TriggerUpdate) GetWorkflowStepID() uint64 {
 }
 
 // Auditable returns all auditable/loggable parameters
-func (r TriggerUpdate) GetInput() expr.Variables {
+func (r TriggerUpdate) GetInput() expr.Vars {
 	return r.Input
 }
 

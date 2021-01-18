@@ -26,14 +26,14 @@ func NewTest(expr, error string) (t *Test, err error) {
 
 func (t Test) GetExpr() string              { return t.Expr }
 func (t *Test) SetEval(eval expr.Evaluable) { t.eval = eval }
-func (t Test) Eval(ctx context.Context, scope expr.Variables) (interface{}, error) {
+func (t Test) Eval(ctx context.Context, scope expr.Vars) (interface{}, error) {
 	return t.eval.Eval(ctx, scope)
 }
-func (t Test) Test(ctx context.Context, scope expr.Variables) (bool, error) {
+func (t Test) Test(ctx context.Context, scope expr.Vars) (bool, error) {
 	return t.eval.Test(ctx, scope)
 }
 
-func (set TestSet) Validate(ctx context.Context, scope expr.Variables) (TestSet, error) {
+func (set TestSet) Validate(ctx context.Context, scope expr.Vars) (TestSet, error) {
 	vres := make(TestSet, 0, len(set))
 
 	for _, t := range set {
@@ -50,11 +50,11 @@ func (set TestSet) Validate(ctx context.Context, scope expr.Variables) (TestSet,
 	return vres, nil
 }
 
-func (set TestSet) Test(ctx context.Context, scope expr.Variables) (bool, error) {
+func (set TestSet) Test(ctx context.Context, scope expr.Vars) (bool, error) {
 	return set.TestAll(ctx, scope)
 }
 
-func (set TestSet) TestAll(ctx context.Context, scope expr.Variables) (bool, error) {
+func (set TestSet) TestAll(ctx context.Context, scope expr.Vars) (bool, error) {
 	for _, t := range set {
 		r, err := t.Test(ctx, scope)
 		if err != nil || !r {
@@ -66,7 +66,7 @@ func (set TestSet) TestAll(ctx context.Context, scope expr.Variables) (bool, err
 }
 
 // Returns true on first true
-func (set TestSet) TestAny(ctx context.Context, scope expr.Variables) (bool, error) {
+func (set TestSet) TestAny(ctx context.Context, scope expr.Vars) (bool, error) {
 	for _, t := range set {
 		r, err := t.Test(ctx, scope)
 		if err != nil {

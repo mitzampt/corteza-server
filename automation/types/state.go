@@ -18,8 +18,8 @@ type (
 		CreatedAt time.Time `json:"createdAt,omitempty"`
 		CreatedBy uint64    `json:"createdBy,string"`
 
-		CallerID uint64         `json:"callerID,string"`
-		StepID   uint64         `json:"stepID,string"`
-		Scope    expr.Variables `json:"scope"`
+		CallerID uint64    `json:"callerID,string"`
+		StepID   uint64    `json:"stepID,string"`
+		Scope    expr.Vars `json:"scope"`
 	}
 )

@@ -33,9 +33,18 @@ func (s *sesTestStep) Exec(ctx context.Context, r *ExecRequest) (ExecResponse, e
 		return s.exec(ctx, r)
 	}
 
-	return expr.Variables{
-		"counter": r.Scope.Int("counter", 0) + 1,
-		"path":    r.Scope.String("path", "") + "/" + s.name,
+	var args = struct {
+		Path    string
+		Counter int
+	}{}
+
+	if err := r.Scope.Decode(&args); err != nil {
+		return nil, err
+	}
+
+	return expr.Vars{
+		"counter": args.Counter + 1,
+		"path":    args.Path + "/" + s.name,
 		s.name:    "executed",
 	}, nil
 }
@@ -49,7 +58,7 @@ func (s *sesTestTemporal) Exec(ctx context.Context, r *ExecRequest) (ExecRespons
 		return DelayExecution(s.until), nil
 	}
 
-	return expr.Variables{
+	return expr.Vars{
 		"waitForMoment": "executed",
 	}, nil
 }
@@ -66,11 +75,11 @@ func TestSession_TwoStepWorkflow(t *testing.T) {
 	)
 
 	wf.AddStep(s1, s2) // 1st execute s1 then s2
-	ses.Exec(ctx, s1, expr.Variables{"two": 1, "three": 1})
+	ses.Exec(ctx, s1, expr.Vars{"two": 1, "three": 1})
 	ses.Wait(ctx)
 	req.NoError(ses.Error())
 	req.NotNil(ses.Result())
-	req.Equal("/s1/s2", ses.Result().String("path", ""))
+	req.Equal("/s1/s2", ses.Result()["path"])
 }
 
 func TestSession_SplitAndMerge(t *testing.T) {
@@ -98,7 +107,7 @@ func TestSession_SplitAndMerge(t *testing.T) {
 	req.NoError(ses.Error())
 	req.NotNil(ses.Result())
 	// split3 only!
-	req.Equal("/start/split3", ses.Result().String("path", ""))
+	req.Equal("/start/split3", ses.Result()["path"])
 	req.Contains(ses.Result(), "split1")
 	req.Contains(ses.Result(), "split2")
 	req.Contains(ses.Result(), "split3")
@@ -130,7 +139,7 @@ func TestSession_Delays(t *testing.T) {
 				return WaitForInput(), nil
 			}
 
-			return expr.Variables{
+			return expr.Vars{
 				"input":        r.Input["input"],
 				"waitForInput": "executed",
 			}, nil
@@ -157,7 +166,7 @@ func TestSession_Delays(t *testing.T) {
 	req.True(ses.Suspended())
 
 	// push in the input
-	req.NoError(ses.Resume(ctx, waitForInputStateId.Load(), expr.Variables{"input": "foo"}))
+	req.NoError(ses.Resume(ctx, waitForInputStateId.Load(), expr.Vars{"input": "foo"}))
 
 	req.False(ses.Suspended())
 	ses.Wait(ctx)
@@ -169,7 +178,7 @@ func TestSession_Delays(t *testing.T) {
 	req.NotNil(ses.Result())
 	req.Contains(ses.Result(), "waitForMoment")
 	req.Contains(ses.Result(), "waitForInput")
-	req.Equal("foo", ses.Result().String("input", ""))
+	req.Equal("foo", ses.Result()["input"])
 }
 
 func bmSessionSimpleStepSequence(c uint64, b *testing.B) {

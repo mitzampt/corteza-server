@@ -287,7 +287,7 @@ func (svc *workflow) UndeleteByID(ctx context.Context, workflowID uint64) error 
 // Start runs a new workflow
 //
 // Workflow execution is asynchronous operation.
-func (svc *workflow) Start(ctx context.Context, workflowID uint64, scope expr.Variables) error {
+func (svc *workflow) Start(ctx context.Context, workflowID uint64, scope expr.Vars) error {
 	defer svc.mux.Unlock()
 	svc.mux.Lock()
 	return errors.Internal("pending implementation")
@@ -620,8 +620,8 @@ func (svc *workflow) convGateway(g *wfexec.Graph, s *types.WorkflowStep, in, out
 				return nil, err
 			}
 
-			p, err := wfexec.NewGatewayPath(child, func(ctx context.Context, scope expr.Variables) (bool, error) {
-				return c.Test(ctx, expr.Variables(scope))
+			p, err := wfexec.NewGatewayPath(child, func(ctx context.Context, scope expr.Vars) (bool, error) {
+				return c.Test(ctx, expr.Vars(scope))
 			})
 
 			if err != nil {

@@ -108,7 +108,7 @@ type (
 		// Scope POST parameter
 		//
 		// Workflow meta data
-		Scope expr.Variables
+		Scope expr.Vars
 
 		// Steps POST parameter
 		//
@@ -170,7 +170,7 @@ type (
 		// Scope POST parameter
 		//
 		// Workflow meta data
-		Scope expr.Variables
+		Scope expr.Vars
 
 		// Steps POST parameter
 		//
@@ -223,7 +223,7 @@ type (
 		// Scope POST parameter
 		//
 		// Workflow meta data
-		Scope expr.Variables
+		Scope expr.Vars
 
 		// RunAs POST parameter
 		//
@@ -424,7 +424,7 @@ func (r WorkflowCreate) GetKeepSessions() int {
 }
 
 // Auditable returns all auditable/loggable parameters
-func (r WorkflowCreate) GetScope() expr.Variables {
+func (r WorkflowCreate) GetScope() expr.Vars {
 	return r.Scope
 }
 
@@ -633,7 +633,7 @@ func (r WorkflowUpdate) GetKeepSessions() int {
 }
 
 // Auditable returns all auditable/loggable parameters
-func (r WorkflowUpdate) GetScope() expr.Variables {
+func (r WorkflowUpdate) GetScope() expr.Vars {
 	return r.Scope
 }
 
@@ -950,7 +950,7 @@ func (r WorkflowTest) GetWorkflowID() uint64 {
 }
 
 // Auditable returns all auditable/loggable parameters
-func (r WorkflowTest) GetScope() expr.Variables {
+func (r WorkflowTest) GetScope() expr.Vars {
 	return r.Scope
 }
 

@@ -39,25 +39,25 @@ func NewExpr(name, typ, expr string) (e *Expr, err error) {
 
 func (e Expr) GetExpr() string              { return e.Expr }
 func (e *Expr) SetEval(eval expr.Evaluable) { e.eval = eval }
-func (e Expr) Eval(ctx context.Context, scope expr.Variables) (interface{}, error) {
+func (e Expr) Eval(ctx context.Context, scope expr.Vars) (interface{}, error) {
 	return e.eval.Eval(ctx, scope)
 }
-func (e Expr) Test(ctx context.Context, scope expr.Variables) (bool, error) {
+func (e Expr) Test(ctx context.Context, scope expr.Vars) (bool, error) {
 	return e.eval.Test(ctx, scope)
 }
 
-func (set ExprSet) Validate(ctx context.Context, in expr.Variables) (TestSet, error) {
+func (set ExprSet) Validate(ctx context.Context, in expr.Vars) (TestSet, error) {
 	var (
 		out TestSet
 		vv  TestSet
 		err error
 
 		// Copy/create scope
-		scope = expr.Variables.Merge(in)
+		scope = expr.Vars.Merge(in)
 	)
 
 	for _, e := range set {
-		vv, err = e.Tests.Validate(ctx, expr.Variables(scope))
+		vv, err = e.Tests.Validate(ctx, expr.Vars(scope))
 		if err != nil {
 			return nil, err
 		}
@@ -68,22 +68,33 @@ func (set ExprSet) Validate(ctx context.Context, in expr.Variables) (TestSet, er
 	return out, nil
 }
 
-func (set ExprSet) Eval(ctx context.Context, in expr.Variables) (expr.Variables, error) {
+func (set ExprSet) Eval(ctx context.Context, in expr.Vars) (expr.Vars, error) {
 	var (
 		err error
 
 		// Copy/create scope
-		scope = expr.Variables.Merge(in)
-		out   = expr.Variables{}
+		scope = expr.Vars.Merge(in)
+		out   = expr.Vars{}
+		tmp   interface{}
 	)
 
 	for _, e := range set {
-		scope[e.Name], err = e.eval.Eval(ctx, scope)
+		tmp, err = e.eval.Eval(ctx, scope)
 		if err != nil {
 			return nil, err
 		}
 
-		out[e.Name] = scope[e.Name]
+		// @todo figure out what type do we need to use from e.Type
+		new := expr.NewAny(tmp)
+
+		if err = scope.Set(new, expr.Path(e.Name)...); err != nil {
+			return nil, err
+		}
+
+		if err = out.Set(new, expr.Path(e.Name)...); err != nil {
+			return nil, err
+		}
+
 	}
 
 	return out, nil

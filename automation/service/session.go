@@ -149,7 +149,7 @@ func (svc *session) Start(g *wfexec.Graph, i auth.Identifiable, ssp types.Sessio
 // Resume resumes suspended session/state
 //
 // Session can only be resumed by knowing session and state ID. Resume is an asynchronous operation
-func (svc *session) Resume(sessionID, stateID uint64, i auth.Identifiable, input expr.Variables) error {
+func (svc *session) Resume(sessionID, stateID uint64, i auth.Identifiable, input expr.Vars) error {
 	var (
 		ctx = auth.SetIdentityToContext(context.Background(), i)
 	)

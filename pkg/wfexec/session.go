@@ -37,7 +37,7 @@ type (
 		workerInterval time.Duration
 
 		// holds final result
-		result expr.Variables
+		result expr.Vars
 		err    error
 
 		mux *sync.RWMutex
@@ -84,21 +84,21 @@ type (
 		err error
 
 		// input variables that were sent to resume the session
-		input expr.Variables
+		input expr.Vars
 
 		// scope
-		scope expr.Variables
+		scope expr.Vars
 	}
 
 	Frame struct {
-		Created   time.Time      `json:"created"`
-		SessionID uint64         `json:"sessionID"`
-		StateID   uint64         `json:"stateID"`
-		Input     expr.Variables `json:"input"`
-		Scope     expr.Variables `json:"scope"`
-		ParentID  uint64         `json:"parentID"`
-		StepID    uint64         `json:"stepID"`
-		LeadTime  time.Duration  `json:"leadTime"`
+		Created   time.Time     `json:"created"`
+		SessionID uint64        `json:"sessionID"`
+		StateID   uint64        `json:"stateID"`
+		Input     expr.Vars     `json:"input"`
+		Scope     expr.Vars     `json:"scope"`
+		ParentID  uint64        `json:"parentID"`
+		StepID    uint64        `json:"stepID"`
+		LeadTime  time.Duration `json:"leadTime"`
 	}
 
 	// ExecRequest is passed to Exec() functions and contains all information to
@@ -108,10 +108,10 @@ type (
 		StateID   uint64
 
 		// Current input received on session resume
-		Input expr.Variables
+		Input expr.Vars
 
 		// Current scope
-		Scope expr.Variables
+		Scope expr.Vars
 
 		// Helps with gateway join/merge steps
 		// that needs info about the step it's currently merging
@@ -207,14 +207,14 @@ func (s *Session) Error() error {
 	return s.err
 }
 
-func (s *Session) Result() expr.Variables {
+func (s *Session) Result() expr.Vars {
 	defer s.mux.RUnlock()
 	s.mux.RLock()
 
 	return s.result
 }
 
-func (s *Session) Exec(ctx context.Context, step Step, scope expr.Variables) error {
+func (s *Session) Exec(ctx context.Context, step Step, scope expr.Vars) error {
 	if s.g.Len() == 0 {
 		return fmt.Errorf("refusing to execute without steps")
 	}
@@ -226,7 +226,7 @@ func (s *Session) Exec(ctx context.Context, step Step, scope expr.Variables) err
 	return s.enqueue(ctx, NewState(s, nil, step, scope))
 }
 
-func (s *Session) Resume(ctx context.Context, stateId uint64, input expr.Variables) error {
+func (s *Session) Resume(ctx context.Context, stateId uint64, input expr.Vars) error {
 	defer s.mux.Unlock()
 	s.mux.Lock()
 
@@ -332,7 +332,7 @@ func (s *Session) worker(ctx context.Context) {
 				s.mux.Lock()
 
 				// making sure result != nil
-				s.result = expr.Variables{}.Merge(st.scope)
+				s.result = expr.Vars{}.Merge(st.scope)
 				return
 			}
 
@@ -413,7 +413,7 @@ func (s *Session) exec(ctx context.Context, st *State) {
 		}
 
 		switch result := result.(type) {
-		case expr.Variables:
+		case expr.Vars:
 			// most common (successful) result
 			// session will continue with configured child steps
 			s.log.Debugf("Session(%d).exec(%d) => variables: %v", s.id, st.stateId, result)
@@ -504,7 +504,7 @@ func SetHandler(fn StateChangeHandler) sessionOpt {
 	}
 }
 
-func NewState(ses *Session, caller, current Step, scope expr.Variables) *State {
+func NewState(ses *Session, caller, current Step, scope expr.Vars) *State {
 	return &State{
 		stateId:   nextID(),
 		sessionId: ses.id,
@@ -515,7 +515,7 @@ func NewState(ses *Session, caller, current Step, scope expr.Variables) *State {
 	}
 }
 
-func FinalState(ses *Session, scope expr.Variables) *State {
+func FinalState(ses *Session, scope expr.Vars) *State {
 	return &State{
 		stateId:   nextID(),
 		sessionId: ses.id,

@@ -184,7 +184,7 @@ func TestWorkflowCreateFull(t *testing.T) {
 			Enabled:      true,
 			Trace:        true,
 			KeepSessions: 10000,
-			Scope:        expr.Variables{"foo": "bar"},
+			Scope:        expr.Vars{"foo": "bar"},
 			Steps: types.WorkflowStepSet{
 				{ID: 1, Kind: types.WorkflowStepKindExpressions, Meta: types.WorkflowStepMeta{Visual: map[string]interface{}{"foo": "bar"}}},
 				{ID: 2, Kind: types.WorkflowStepKindExpressions},

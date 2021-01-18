@@ -18,7 +18,7 @@ type (
 		svc interface {
 			Search(ctx context.Context, filter types.SessionFilter) (types.SessionSet, types.SessionFilter, error)
 			LookupByID(ctx context.Context, sessionID uint64) (*types.Session, error)
-			Resume(sessionID, stateID uint64, i auth.Identifiable, input expr.Variables) error
+			Resume(sessionID, stateID uint64, i auth.Identifiable, input expr.Vars) error
 		}
 	}
 

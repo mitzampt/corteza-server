@@ -12,7 +12,7 @@ fields:
   - { field: ResourceType }
   - { field: EventType    }
   - { field: Constraints, type: "json.Text" }
-  - { field: Input,       type: "expr.Variables" }
+  - { field: Input,       type: "expr.Vars" }
   - { field: OwnedBy   }
   - { field: CreatedBy }
   - { field: UpdatedBy }

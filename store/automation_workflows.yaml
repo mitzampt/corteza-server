@@ -11,9 +11,9 @@ fields:
   - { field: Enabled,      type: bool }
   - { field: Trace,        type: bool }
   - { field: KeepSessions, type: "time.Duration" }
-  - { field: Scope,        type: "expr.Variables" }
-  - { field: Steps,        type: "expr.Variables" }
-  - { field: Paths,        type: "expr.Variables" }
+  - { field: Scope,        type: "expr.Vars" }
+  - { field: Steps,        type: "expr.Vars" }
+  - { field: Paths,        type: "expr.Vars" }
   - { field: RunAs,        type: "uint64" }
   - { field: OwnedBy }
   - { field: CreatedBy }

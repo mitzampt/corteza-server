@@ -22,8 +22,8 @@ type (
 		EventType    string `json:"eventType"`
 		ResourceType string `json:"resourceType"`
 
-		Input  expr.Variables `json:"input"`
-		Output expr.Variables `json:"output"`
+		Input  expr.Vars `json:"input"`
+		Output expr.Vars `json:"output"`
 
 		Stacktrace Stacktrace `json:"stacktrace"`
 
@@ -41,7 +41,7 @@ type (
 		WorkflowID   uint64
 		KeepFor      int
 		Trace        bool
-		Input        expr.Variables
+		Input        expr.Vars
 		StepID       uint64
 		EventType    string
 		ResourceType string
@@ -86,12 +86,12 @@ func NewSession(s *wfexec.Session) *Session {
 	}
 }
 
-func (s Session) Exec(ctx context.Context, step wfexec.Step, input expr.Variables) error {
-	return s.session.Exec(ctx, step, expr.Variables(input))
+func (s Session) Exec(ctx context.Context, step wfexec.Step, input expr.Vars) error {
+	return s.session.Exec(ctx, step, expr.Vars(input))
 }
 
-func (s Session) Resume(ctx context.Context, stateID uint64, input expr.Variables) error {
-	return s.session.Resume(ctx, stateID, expr.Variables(input))
+func (s Session) Resume(ctx context.Context, stateID uint64, input expr.Vars) error {
+	return s.session.Resume(ctx, stateID, expr.Vars(input))
 }
 
 func (s *Session) Apply(ssp SessionStartParams) {

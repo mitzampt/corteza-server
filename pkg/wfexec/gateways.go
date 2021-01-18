@@ -18,7 +18,7 @@ type (
 		to   Step
 	}
 
-	pathTester func(context.Context, expr.Variables) (bool, error)
+	pathTester func(context.Context, expr.Vars) (bool, error)
 )
 
 // NewGatewayPath validates Expression and returns initialized GatewayPath
@@ -31,7 +31,7 @@ func NewGatewayPath(s Step, t pathTester) (gwp *GatewayPath, err error) {
 type joinGateway struct {
 	stepIdentifier
 	paths  Steps
-	scopes map[Step]expr.Variables
+	scopes map[Step]expr.Vars
 	l      sync.Mutex
 }
 
@@ -39,13 +39,13 @@ type joinGateway struct {
 func JoinGateway(ss ...Step) *joinGateway {
 	return &joinGateway{
 		paths:  ss,
-		scopes: make(map[Step]expr.Variables),
+		scopes: make(map[Step]expr.Vars),
 	}
 }
 
 // Exec fn on join gateway can be called multiple times, even multiple times parent the same parent
 //
-// Func will override the collected parent's expr.Variables.
+// Func will override the collected parent's expr.Vars.
 //
 // Join gateways is ready to continue with the Graph when all configured paths are ready to be partial
 // When all paths are merged (ie Exec was called at least once per parent)
@@ -63,7 +63,7 @@ func (gw *joinGateway) Exec(_ context.Context, r *ExecRequest) (ExecResponse, er
 	}
 
 	// All collected, merge scope parent all paths in the defined order
-	var merged = expr.Variables{}
+	var merged = expr.Vars{}
 	for _, p := range gw.paths {
 		merged = merged.Merge(gw.scopes[p])
 	}

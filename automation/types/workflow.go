@@ -26,7 +26,7 @@ type (
 		KeepSessions int `json:"keepSessions"`
 
 		// Initial input scope
-		Scope expr.Variables `json:"scope"`
+		Scope expr.Vars `json:"scope"`
 
 		Steps WorkflowStepSet `json:"steps"`
 		Paths WorkflowPathSet `json:"paths"`
@@ -157,10 +157,10 @@ func (vv *WorkflowMeta) Value() (driver.Value, error) {
 
 func (t WorkflowPath) GetExpr() string              { return t.Expr }
 func (t *WorkflowPath) SetEval(eval expr.Evaluable) { t.eval = eval }
-func (t WorkflowPath) Eval(ctx context.Context, scope expr.Variables) (interface{}, error) {
+func (t WorkflowPath) Eval(ctx context.Context, scope expr.Vars) (interface{}, error) {
 	return t.eval.Eval(ctx, scope)
 }
-func (t WorkflowPath) Test(ctx context.Context, scope expr.Variables) (bool, error) {
+func (t WorkflowPath) Test(ctx context.Context, scope expr.Vars) (bool, error) {
 	return t.eval.Test(ctx, scope)
 }
 

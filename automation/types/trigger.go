@@ -29,7 +29,7 @@ type (
 
 		// Initial input scope,
 		// will be merged merged with workflow variables
-		Input expr.Variables `json:"input"`
+		Input expr.Vars `json:"input"`
 
 		Labels map[string]string `json:"labels,omitempty"`
 		Meta   *WorkflowMeta     `json:"meta"`

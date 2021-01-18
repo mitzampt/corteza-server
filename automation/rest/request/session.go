@@ -113,7 +113,7 @@ type (
 		// Input POST parameter
 		//
 		// Workflow meta data
-		Input expr.Variables
+		Input expr.Vars
 	}
 )
 
@@ -428,7 +428,7 @@ func (r SessionResume) GetStateID() uint64 {
 }
 
 // Auditable returns all auditable/loggable parameters
-func (r SessionResume) GetInput() expr.Variables {
+func (r SessionResume) GetInput() expr.Vars {
 	return r.Input
 }
 
