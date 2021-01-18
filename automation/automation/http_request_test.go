@@ -2,10 +2,10 @@ package automation
 
 import (
 	"context"
-	"github.com/cortezaproject/corteza-server/pkg/expr"
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"testing"
 )
 
@@ -22,42 +22,30 @@ func TestHttpRequestMaker(t *testing.T) {
 
 	t.Run("basic get", func(t *testing.T) {
 		var (
-			r  = require.New(t)
-			in = expr.Vars{
-				"url": expr.NewString("http://localhost/test"),
-			}
-			req, err = makeHttpRequest(context.Background(), in)
+			r = require.New(t)
+
+			req, err = httpRequestHandler{}.makeRequest(context.Background(), &httpRequestSendArgs{
+				Url:    "http://localhost/test",
+				Method: "GET",
+			})
 		)
 
 		r.NoError(err)
 		r.Equal("GET", req.Method)
 		r.Equal("http://localhost/test", req.URL.String())
 	})
-	//
-	//j := func(in expr.Vars) expr.Vars {
-	//	j, err := json.Marshal(in)
-	//	if err != nil {
-	//		panic(err)
-	//	}
-	//	out := expr.Vars{}
-	//	err = json.Unmarshal(j, &out)
-	//	if err != nil {
-	//		panic(err)
-	//	}
-	//	return out
-	//}
 
 	t.Run("post form", func(t *testing.T) {
 		var (
 			r  = require.New(t)
-			in = expr.Vars{
-				"form": expr.NewKVV(map[string][]string{
-					"a": []string{"a"},
-					"b": []string{"b", "b"},
-					"i": []string{"42"},
+			in = &httpRequestSendArgs{
+				Form: url.Values(map[string][]string{
+					"a": {"a"},
+					"b": {"b", "b"},
+					"i": {"42"},
 				}),
 			}
-			req, err = makeHttpRequest(context.Background(), in)
+			req, err = httpRequestHandler{}.makeRequest(context.Background(), in)
 		)
 
 		r.NoError(err)

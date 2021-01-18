@@ -3,10 +3,8 @@ package service
 import (
 	"context"
 	"fmt"
-	"github.com/cortezaproject/corteza-server/pkg/logger"
-	"strconv"
-	"time"
-
+	automationService "github.com/cortezaproject/corteza-server/automation/service"
+	"github.com/cortezaproject/corteza-server/compose/automation"
 	"github.com/cortezaproject/corteza-server/compose/types"
 	"github.com/cortezaproject/corteza-server/pkg/actionlog"
 	"github.com/cortezaproject/corteza-server/pkg/corredor"
@@ -14,6 +12,7 @@ import (
 	"github.com/cortezaproject/corteza-server/pkg/filter"
 	"github.com/cortezaproject/corteza-server/pkg/healthcheck"
 	"github.com/cortezaproject/corteza-server/pkg/id"
+	"github.com/cortezaproject/corteza-server/pkg/logger"
 	"github.com/cortezaproject/corteza-server/pkg/objstore"
 	"github.com/cortezaproject/corteza-server/pkg/objstore/minio"
 	"github.com/cortezaproject/corteza-server/pkg/objstore/plain"
@@ -21,6 +20,8 @@ import (
 	"github.com/cortezaproject/corteza-server/pkg/rbac"
 	"github.com/cortezaproject/corteza-server/store"
 	"go.uber.org/zap"
+	"strconv"
+	"time"
 )
 
 type (
@@ -81,6 +82,9 @@ func Initialize(ctx context.Context, log *zap.Logger, s store.Storer, c Config) 
 	var (
 		hcd = healthcheck.Defaults()
 	)
+
+	// Register automation functions (record, module, namespace, page, chart manipulators
+	automation.RegisterFunctions(automationService.FunctionRegistrator)
 
 	DefaultStore = s
 

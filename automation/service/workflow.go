@@ -17,7 +17,6 @@ import (
 	"github.com/cortezaproject/corteza-server/store"
 	"go.uber.org/zap"
 	"reflect"
-	"sort"
 	"sync"
 )
 
@@ -82,49 +81,6 @@ func Workflow(log *zap.Logger) *workflow {
 		mux:       &sync.RWMutex{},
 		parser:    expr.NewParser(),
 	}
-}
-
-func (svc *workflow) RegisterFn(ff ...*types.Function) {
-	defer svc.mux.Unlock()
-	svc.mux.Lock()
-	for _, fn := range ff {
-		svc.fnreg[fn.Ref] = fn
-	}
-}
-
-func (svc *workflow) UnregisterFn(rr ...string) {
-	defer svc.mux.Unlock()
-	svc.mux.Lock()
-	for _, ref := range rr {
-		delete(svc.fnreg, ref)
-	}
-}
-
-func (svc *workflow) getRegisteredFn(name string) *types.Function {
-	defer svc.mux.RUnlock()
-	svc.mux.RLock()
-	return svc.fnreg[name]
-}
-
-func (svc *workflow) RegisteredFn() []*types.Function {
-	defer svc.mux.RUnlock()
-	svc.mux.RLock()
-	var (
-		rr = make([]string, 0, len(svc.fnreg))
-		ff = make([]*types.Function, 0, len(svc.fnreg))
-	)
-
-	for ref := range svc.fnreg {
-		rr = append(rr, ref)
-	}
-
-	sort.Strings(rr)
-
-	for _, ref := range rr {
-		ff = append(ff, svc.fnreg[ref])
-	}
-
-	return ff
 }
 
 func (svc *workflow) Search(ctx context.Context, filter types.WorkflowFilter) (rr types.WorkflowSet, f types.WorkflowFilter, err error) {
@@ -654,7 +610,7 @@ func (svc *workflow) convFunctionStep(s *types.WorkflowStep) (wfexec.Step, error
 		return nil, errors.Internal("function reference missing")
 	}
 
-	if def := svc.getRegisteredFn(s.Ref); def == nil {
+	if def := functionRegistry[s.Ref]; def == nil {
 		return nil, errors.Internal("unknown function %q", s.Ref)
 	} else {
 		var (

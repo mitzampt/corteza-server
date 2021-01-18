@@ -17,6 +17,15 @@ import (
 {{- end }}
 )
 
+var (
+	{{ $.Name }} = &{{ $.Name }}Handler{}
+)
+
+func (h {{ $.Name }}Handler) register(reg func(*atypes.Function)) {
+{{- range .Functions }}
+	reg(h.{{ export .Name }}())
+{{- end }}
+}
 
 {{ range .Functions }}
 	{{ $REF     := unexport $.Prefix $.Name .Name }}

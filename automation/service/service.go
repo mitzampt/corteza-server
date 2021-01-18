@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"github.com/cortezaproject/corteza-server/automation/automation"
+	"github.com/cortezaproject/corteza-server/automation/types"
 	"github.com/cortezaproject/corteza-server/pkg/actionlog"
 	"github.com/cortezaproject/corteza-server/pkg/id"
 	"github.com/cortezaproject/corteza-server/pkg/objstore"
@@ -11,6 +12,7 @@ import (
 	"github.com/cortezaproject/corteza-server/store"
 	systemService "github.com/cortezaproject/corteza-server/system/service"
 	"go.uber.org/zap"
+	"sort"
 	"time"
 )
 
@@ -55,12 +57,17 @@ var (
 	nextID = func() uint64 {
 		return id.Next()
 	}
+
+	// workflow function registry
+	functionRegistry = make(map[string]*types.Function)
 )
 
 func Initialize(ctx context.Context, log *zap.Logger, s store.Storer, c Config) (err error) {
 	var (
 	//hcd = healthcheck.Defaults()
 	)
+
+	automation.RegisterFunctions(FunctionRegistrator)
 
 	// we're doing conversion to avoid having
 	// store interface exposed or generated inside app package
@@ -95,7 +102,6 @@ func Initialize(ctx context.Context, log *zap.Logger, s store.Storer, c Config) 
 }
 
 func Activate(ctx context.Context) (err error) {
-	DefaultWorkflow.RegisterFn(automation.List()...)
 	if err = DefaultWorkflow.Load(ctx); err != nil {
 		return
 	}
@@ -125,4 +131,27 @@ func isStale(new *time.Time, updatedAt *time.Time, createdAt time.Time) bool {
 // trim1st removes 1st param and returns only error
 func trim1st(_ interface{}, err error) error {
 	return err
+}
+
+func FunctionRegistrator(fn *types.Function) {
+	functionRegistry[fn.Ref] = fn
+}
+
+func RegisteredFunctions() []*types.Function {
+	var (
+		rr = make([]string, 0, len(functionRegistry))
+		ff = make([]*types.Function, 0, len(functionRegistry))
+	)
+
+	for ref := range functionRegistry {
+		rr = append(rr, ref)
+	}
+
+	sort.Strings(rr)
+
+	for _, ref := range rr {
+		ff = append(ff, functionRegistry[ref])
+	}
+
+	return ff
 }

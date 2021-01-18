@@ -3,7 +3,7 @@ prefix: compose
 imports:
   - github.com/cortezaproject/corteza-server/compose/types
   - github.com/cortezaproject/corteza-server/pkg/label
-  - time
+#  - time
 
 params:
   module: &module
@@ -26,6 +26,11 @@ params:
       - { wf: expr.String, go: string,             suffix: handle }
       - { wf: Namespace,   go: "*types.Namespace", suffix: full }
 
+  record: &record
+    required: true
+    types:
+      - { wf: Record,      go: "*types.Record" }
+
   recordID: &recordID
     required: true
     types:
@@ -44,37 +49,7 @@ params:
       visual:
         ref: users
 
-  createdBy: &createdBy
-    types: [ { wf: expr.ID,        go: uint64 } ]
-    meta:
-      label: Record creator
-      visual:
-        ref: users
-
-  createdAt: &createdAt
-    types: [ { wf: expr.Datetime,  go: "*time.Time" } ]
-
-  updatedBy: &updatedBy
-    types: [ { wf: expr.ID,        go: uint64 } ]
-    meta:
-      label: Record updater
-      visual:
-        ref: users
-
-  updatedAt: &updatedAt
-    types: [ { wf: expr.Datetime,  go: "*time.Time" } ]
-
-  deletedBy: &deletedBy
-    types: [ { wf: expr.ID,        go: uint64 } ]
-    meta:
-      label: Record updater
-      visual:
-        ref: users
-
-  deletedAt: &deletedAt
-    types: [ { wf: expr.Datetime,  go: "*time.Time" } ]
-
-  record: &record
+  recordReturnValue: &recordReturnValue
     wf: Record
     go: "*types.Record"
 
@@ -87,7 +62,7 @@ functions:
       module: *module
       namespace: *namespace
     results:
-      record: *record
+      record: *recordReturnValue
 
   save:
     meta:
@@ -95,7 +70,7 @@ functions:
     params:
       record: *record
     results:
-      record: *record
+      record: *recordReturnValue
 
   # @todo validate
   #       -> record
@@ -117,14 +92,8 @@ functions:
       values: *values
       labels: *labels
       ownedBy: *ownedBy
-      createdBy: *createdBy
-      createdAt: *createdAt
-      updatedBy: *updatedBy
-      updatedAt: *updatedAt
-      deletedBy: *deletedBy
-      deletedAt: *deletedAt
     results:
-      record: *record
+      record: *recordReturnValue
 
   update:
     meta:
@@ -135,14 +104,8 @@ functions:
       values: *values
       labels: *labels
       ownedBy: *ownedBy
-      createdBy: *createdBy
-      createdAt: *createdAt
-      updatedBy: *updatedBy
-      updatedAt: *updatedAt
-      deletedBy: *deletedBy
-      deletedAt: *deletedAt
     results:
-      record: *record
+      record: *recordReturnValue
 
   delete:
     meta:
@@ -151,15 +114,11 @@ functions:
       recordID: *recordID
       module: *module
       namespace: *namespace
-    results:
-      record: *record
 
-  restore:
-    meta:
-      short: Soft deletes compose record by ID
-    params:
-      recordID: *recordID
-      module: *module
-      namespace: *namespace
-    results:
-      record: *record
+#  restore:
+#    meta:
+#      short: Soft deletes compose record by ID
+#    params:
+#      recordID: *recordID
+#      module: *module
+#      namespace: *namespace

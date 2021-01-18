@@ -1,0 +1,100 @@
+name: httpRequest
+
+imports:
+  - time
+  - net/http
+  - net/url
+  - io
+
+params:
+  url: &url
+    required: true
+    types:
+      - { wf: expr.String,   go: 'string' }
+  method: &method
+    required: true
+    types:
+      - { wf: expr.String,   go: 'string' }
+  params: &params
+    types:
+      - { wf: expr.KVV,      go: 'url.Values' }
+  headers: &headers
+    types:
+      - { wf: expr.KVV,      go: 'http.Header' }
+  headerAuthBearer: &headerAuthBearer
+    types:
+      - { wf: expr.String,   go: 'string' }
+  headerAuthUsername: &headerAuthUsername
+    types:
+      - { wf: expr.String,   go: 'string' }
+  headerAuthPassword: &headerAuthPassword
+    types:
+      - { wf: expr.String,   go: 'string' }
+  headerContentType: &headerContentType
+    types:
+      - { wf: expr.String,   go: 'string' }
+  headerUserAgent: &headerUserAgent
+    types:
+      - { wf: expr.String,   go: 'string' }
+  timeout: &timeout
+    types:
+      - { wf: expr.Duration, go: 'time.Duration' }
+  form: &form
+    types:
+      - { wf: expr.KVV,      go: 'url.Values' }
+  body: &body
+    types:
+      - { wf: expr.String,   go: 'string',      suffix: String }
+      - { wf: expr.Reader,   go: 'io.Reader',   suffix: Stream }
+      - { wf: expr.Any,      go: 'interface{}', suffix: Raw }
+
+results:
+  status: &rStatus
+    wf: expr.String
+    go: string
+
+  stautsCode: &rStatusCode
+    wf: expr.Integer
+    go: int
+
+
+  headers: &rHeaders
+    wf: expr.KVV
+    go: http.Header
+
+  contentLength: &rContentLength
+    wf: expr.Integer64
+    go: int64
+
+  contentType: &rContentType
+    wf: expr.String
+    go: string
+
+  body: &rBody
+    wf: expr.Reader
+    go: io.Reader
+
+functions:
+  send:
+    meta:
+      short: Sends HTTP request
+    params:
+      url:                *url
+      method:             *method
+      params:             *params
+      headers:            *headers
+      headerAuthBearer:   *headerAuthBearer
+      headerAuthUsername: *headerAuthUsername
+      headerAuthPassword: *headerAuthPassword
+      headerUserAgent:    *headerUserAgent
+      headerContentType:  *headerContentType
+      timeout:            *timeout
+      form:               *form
+      body:               *body
+    results:
+      status:             *rStatus
+      statusCode:         *rStatusCode
+      headers:            *rHeaders
+      contentLength:      *rContentLength
+      contentType:        *rContentType
+      body:               *rBody

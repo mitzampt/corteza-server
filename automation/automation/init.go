@@ -1,9 +1,7 @@
 package automation
 
-import (
-	"github.com/cortezaproject/corteza-server/automation/types"
-)
+import atypes "github.com/cortezaproject/corteza-server/automation/types"
 
-func List() []*types.Function {
-	return httpSenders()
+func RegisterFunctions(reg func(*atypes.Function)) {
+	httpRequest.register(reg)
 }

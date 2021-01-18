@@ -9,9 +9,6 @@ import (
 
 type (
 	Function struct {
-		svc interface {
-			RegisteredFn() []*types.Function
-		}
 	}
 
 	functionSetPayload struct {
@@ -21,10 +18,9 @@ type (
 
 func (Function) New() *Function {
 	ctrl := &Function{}
-	ctrl.svc = service.DefaultWorkflow
 	return ctrl
 }
 
 func (ctrl Function) List(ctx context.Context, r *request.FunctionList) (interface{}, error) {
-	return functionSetPayload{Set: ctrl.svc.RegisteredFn()}, nil
+	return functionSetPayload{Set: service.RegisteredFunctions()}, nil
 }
